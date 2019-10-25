@@ -1,4 +1,4 @@
-# Arduino_MKR1500
+# Using Arduino MKR1500 with Live Objects
 
 Code sample for using [**Arduino MKR1500 NB**](https://store.arduino.cc/mkr-nb-1500) with [**Live Objects**](https://liveobjects.orange-business.com), based on MQTT over LTE-M connection.
 
