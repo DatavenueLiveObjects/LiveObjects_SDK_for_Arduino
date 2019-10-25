@@ -1,6 +1,6 @@
 # Using Arduino LTE-M with Live Objects
 
-### Code sample for using [**Arduino MKR1500 NB**](https://store.arduino.cc/mkr-nb-1500) with [**Live Objects**](https://liveobjects.orange-business.com), based on MQTT over LTE-M connection.
+### Code sample for using [**Arduino MKR1500 NB**](https://store.arduino.cc/mkr-nb-1500) with [**Live Objects**](https://liveobjects.orange-business.com), based on MQTT over LTE-M connection
 
 ## External libraries ##
 This code sample uses several external libraries: don't forget to download/install them before using the code.
