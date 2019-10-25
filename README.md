@@ -17,7 +17,7 @@ They can be found using the Library manager of the Arduino IDE.
 
 1. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one.
 2. Create an [API key](https://liveobjects.orange-business.com/#/config/apikeys) for your device (*Device access* role), and paste it in the [arduino_secrets.h](./arduino_secrets.h) file.
-3. Make sure you installed the tools for the MKR 1500 NB (using the board manager of the Arduino IDE), plus all of the above libraries
+3. Make sure you installed the tools for the MKR 1500 NB (using the board manager of the Arduino IDE), plus all of the above libraries.
 4. Compile and upload the code!
 
 The code sends the uptime at the default rate of 60s.
