@@ -10,7 +10,7 @@ They can be found using the Library manager of the Arduino IDE.
 - [MKRNB.h](https://www.arduino.cc/en/Reference/MKRNB) in order to handle the LTE-M module on the **Arduino MKR1500 NB**
 - [ArduinoMqttClient.h](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino (beta stage)
 
-#### Library developped by Benoît Blanchon
+#### Library developed by Benoît Blanchon
 - [ArduinoJson](https://arduinojson.org/), a powerful library used to store, handle and parse JSON
 
 ## How to use ##
