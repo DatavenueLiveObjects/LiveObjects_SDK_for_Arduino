@@ -71,7 +71,7 @@ void connectionManager(bool _way = 1) {
       
       Serial.println("\nYou're connected to the network");
       
-      Serial.print("Connectint to MQTT broker '");
+      Serial.print("Connecting to MQTT broker '");
       Serial.print(mqtt_broker);
       Serial.print("'");
       
