@@ -6,6 +6,7 @@
 
 
 //// your Live Objects credential
-#define SECRET_LIVEOBJECTS_API_KEY "..."	// paste here the Live Objects API key for your device.
+#define SECRET_LIVEOBJECTS_API_KEY "..."	// paste here the Live Objects API key for your device;
+						// your key must use the "MQTT device" profile
 																					// You API key must have the predefined 'MQTT Device' right (alternatively: 'Device Access' read + write rights).
 																					// If your API key has more important rights, you *need* to use a TLS connection (MQTTS).
