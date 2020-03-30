@@ -1,22 +1,30 @@
-#define DEFAULT_TX_FREQUENCY 60
+#define DEFAULT_TX_FREQUENCY 60 // message rate by default
+                                // (can be updated over the air from Live Objects platform)
 
 #include "arduino_secrets.h"
 #include <ArduinoMqttClient.h>
 #include <ArduinoJson.h>
 #include <MKRNB.h>
 
+#define sw_revision "1.0.1"
+
 NB nbAccess;
 //GPRS gprs;
 NBClient nbClient;
 MqttClient mqttClient(nbClient);
 
-const char mqtt_user[] = SECRET_MQTTUSER;
-const char mqtt_pass[] = SECRET_MQTTPASS;
+const char mqtt_user[] = "json+device";
+const char mqtt_pass[] = SECRET_LIVEOBJECTS_API_KEY;
 const char mqtt_id[] = "MKRNB1500";
 const char mqtt_broker[] = "liveobjects.orange-business.com";
 const char mqtt_pubdata[] = "dev/data";
 const char mqtt_pubcfg[] = "dev/cfg";
 const char mqtt_subcfg[] = "dev/cfg/upd";
+
+const char pin[] = SECRET_PINNUMBER;
+const char apn[] = SECRET_APN;
+const char apn_user[] = SECRET_APN_USER;
+const char apn_pass[] = SECRET_APN_PASS;
 
 const char* JSONdata = "{\"model\":\"github_sample_MKR\",\"value\":{\"uptime\":0}}";
 const char* JSONcfg= "{\"cfg\":{\"transmit frequency (s)\":{\"t\":\"u32\",\"v\":0}}}";
@@ -33,6 +41,9 @@ void connectionManager(bool _way);
 void setup() {
   Serial.begin(9600);
   while (!Serial);
+  Serial.print("\n\n***\nUsing Arduino LTE-M with Live Objects\nversion ");
+  Serial.println(sw_revision);
+  Serial.println("***\n");
 
   mqttClient.setId(mqtt_id);
   mqttClient.setUsernamePassword(mqtt_user, mqtt_pass);
@@ -66,8 +77,8 @@ void connectionManager(bool _way = 1) {
     case 1:
       Serial.print("Connecting to cellular network");
       //while ((nbAccess.begin() != NB_READY) || (gprs.attachGPRS() != GPRS_READY))
-      while (nbAccess.begin() != NB_READY)
-        Serial.print(".");
+      while (nbAccess.begin(pin, apn, apn_user, apn_pass) != NB_READY)
+      	Serial.print(".");
       
       Serial.println("\nYou're connected to the network");
       
