@@ -49,7 +49,7 @@ const char mqtt_user[] = "json+device";     // MQTT username for 'device' role
 #endif
 const char mqtt_pubdata[] = "dev/data";     // topic for publishing data
 const char mqtt_pubcfg[] = "dev/cfg";       // subscribed topic for configuration updates
-const char mqtt_subcfg[] = "dev/cfg/upd";   // topic for publishing confuguration
+const char mqtt_subcfg[] = "dev/cfg/upd";   // topic for publishing configuration
 
   // Buffers holding the serialized default payloads for data and configuration
 const char* JSONdata = "{\"model\":\"github_sample_MKR\",\"value\":{\"uptime\":0}}";
