@@ -108,7 +108,6 @@ void loop() {
 
     // connect and send data to Live Objects
     Serial.println("Sending data to Live Objects");
-    //if (nbAccess.status() != NB_READY || gprs.status() != GPRS_READY || !mqttClient.connected())
     if (nbAccess.status() != NB_READY || !mqttClient.connected())
       connectionManager(CONNECT);
 
