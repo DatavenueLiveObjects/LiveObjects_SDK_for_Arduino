@@ -15,7 +15,7 @@ This code needs 3 external libraries to run, that you can install using the buil
 - [ArduinoJson](https://arduinojson.org/), a powerful library used to handle, store and parse JSON
 
 #### SAMD21 Arduino core
-- You also need to install the Arduino Core for Atmel's SAMD21 processor, used on the MKR family boards. Use the [Boards Manager](https://www.arduino.cc/en/guide/cores) to install the package called "Arduino SAMD Boards (32-bit ARM Cortex-M0+)".
+- You also need to install the Arduino Core for Atmel's SAMD21 processor, used on the MKR family boards. Use the [Boards Manager](https://www.arduino.cc/en/guide/cores) to install the package called *Arduino SAMD Boards (32-bit ARM Cortex-M0+)*.
 
 ## How to use ##
 
