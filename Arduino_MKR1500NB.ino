@@ -59,7 +59,7 @@ const char* JSONcfg = "{\"cfg\":{\"message rate (s)\":{\"t\":\"u32\",\"v\":0}}}"
    VARIABLES
  ******************************************************************************/
 
-uint32_t messageRate = DEFAULT_MESSAGE_RATE * 1000;   // stores the current data message rate
+uint32_t messageRate = DEFAULT_MESSAGE_RATE * 1000;   // stores the current message rate
 uint32_t lastMessageTime = DEFAULT_MESSAGE_RATE * 1000;   // stores the time when last data message was sent
 uint32_t uptimeInSec;   // stores the device uptime in seconds (sent in the data message)
 bool DigiCert_rootCA_loaded = false;  // controls if the root CA certificate has already been stored in the SARA module
