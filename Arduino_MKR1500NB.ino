@@ -136,7 +136,6 @@ void connectionManager(NetworkConnectionAction _action = CONNECT) {
           }
           else {
             MODEM.write(LO_ROOT_CERT.data, LO_ROOT_CERT.size);
-            int ready;
             while (!MODEM.ready()) ;
             DigiCert_rootCA_loaded = true;
             Serial.println("Certificate loaded");
