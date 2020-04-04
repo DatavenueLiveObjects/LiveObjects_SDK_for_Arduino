@@ -8,8 +8,8 @@ This code sample provides the minimal basis allowing you to create a LTE-M objec
 This code needs 3 external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
 
 #### Libraries provided by Arduino
-- [MKRNB](https://www.arduino.cc/en/Reference/MKRNB) in order to handle the LTE-M module on the **Arduino MKR1500 NB**
-- [ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino (beta stage)
+- [MKRNB](https://www.arduino.cc/en/Reference/MKRNB) drives the LTE-M module of the Arduino MKR1500
+- [ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) implements a MQTT client for Arduino (beta stage)
 
 #### Library developed by Benoît Blanchon
 - [ArduinoJson](https://arduinojson.org/), a powerful library used to handle, store and parse JSON
