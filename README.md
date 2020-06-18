@@ -92,7 +92,7 @@ Arguments and response are optional when using commands, but they can be useful 
 - You can pass response arguments in the form of a JSON objet stored in the `response` String.
 ```c++
 void playTone(const String arguments, String &response) {
-  // arguments = "{\"frequency\":440,\"duration\":2000}"
+  // arguments = "{\"duration\":2000,\"frequency\":440}"
   // play the tone accordingly to arguments
   response = "{\"I played\":\"the tone\"}";
 }
@@ -102,7 +102,7 @@ void setup() {
 }
 ```
 
-> :warning: **command name and arguments are case-sensitive when creating the command on Live Objects:**
+> :warning: **Command name and arguments are case-sensitive when creating the command on Live Objects.** On the opposite, there is no specific order for specifying the command arguments.
 ![Live Object screenshot](./LiveObjects_command.png)
 
 You may use the ArduinoJSON library, or any other library to process the JSON objects more easily.
