@@ -166,3 +166,19 @@ By default, a maximum of 10 commands can be managerd by the code sample. You can
 ```c++
 #define COMMANDS_NB_MAX 10
 ```
+
+### One of my command is not working ###
+If you have many arguments in your command, first check that you get all the arguments when entering the function:
+```c++
+// this is your callback function
+void blinkLED(const String arguments, String &response) {
+  // display arguments
+  Serial.print("arguments: ");
+  Serial.println(arguments);
+  ...
+}
+```
+If your arguments are incomplete, try allocating more room for JSON storage by modifying the value in the **'LiveObjects.h'** file at line 7:
+```c++
+#define PAYLOAD_DEVMGT_SIZE 256
+```
