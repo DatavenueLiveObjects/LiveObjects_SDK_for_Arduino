@@ -150,7 +150,7 @@ This can happen with large payload, because of the fixed-size JSON storage alloc
 ```
 
 ### My parameters are not registered on Live Objects ###
-As decribed above, it can happen if you have a large number of parameters. You need to allocate more room by modifying the value in the **'LiveObjects.h'** file at line 7:
+Same reason as above, it can happen if you have a large number of parameters. You need to allocate more room by modifying the value in the **'LiveObjects.h'** file at line 7:
 ```c++
 #define PAYLOAD_DEVMGT_SIZE 256
 ```
