@@ -102,7 +102,7 @@ void setup() {
 }
 ```
 
-> :warning: command name and arguments are case-sensitive when creating the command on Live Objects:
+> :warning: **command name and arguments are case-sensitive when creating the command on Live Objects:**
 ![Live Object screenshot](./LiveObjects_command.png)
 
 You may use the ArduinoJSON library, or any other library to process the JSON objects more easily.
