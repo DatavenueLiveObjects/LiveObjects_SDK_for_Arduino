@@ -21,11 +21,10 @@ This code needs 3 external libraries to run, that you can install using the buil
 ## How to use ##
 
 1. Clone or download the directory from Github.
-> :warning: ***Important :*** the .ino file has to be named as the containing folder, so rename the folder "Arduino_MKR_NB_1500".
 2. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one.
 3. Create an [API key](https://liveobjects.orange-business.com/#/config/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
 4. In the **'arduino_secrets.h'** file:
-   - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the [arduino_secrets.h](./arduino_secrets.h) file -keep the double quotes!
+   - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
    - Fill in the cellular credentials if needed (pin code, APN information, etc). Most of the time, APN will set up automatically. Your SIM card may have a "0000" pin code, unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
 5. In the [Arduino_MKR1500NB.ino](./Arduino_MKR1500NB.ino) sketch, you can choose whether or not using TLS security with the MQTT protocol:
 ```c++
@@ -97,7 +96,14 @@ void playTone(const String arguments, String &response) {
   // play the tone accordingly to arguments
   response = "{\"I played\":\"the tone\"}";
 }
+
+void setup() {
+  addParameter("play tone", playTone);
+}
 ```
+
+> :warning: command name and arguments are case-sensitive when creating the command on Live Objects:
+![Live Object screenshot](./command.png)
 
 You may use the ArduinoJSON library, or any other library to process the JSON objects more easily.
 
