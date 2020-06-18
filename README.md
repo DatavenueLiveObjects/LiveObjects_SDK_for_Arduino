@@ -1,4 +1,4 @@
-# Prototype IoT with Orange using Live Objects and Arduino MKR NB 1500
+# Prototype LTE-M with Orange using Live Objects and Arduino MKR NB 1500
 
 ### Discover the LTE-M cellular network, dedicated to IoT, using [**Live Objects**](https://liveobjects.orange-business.com) and [**Arduino MKR NB 1500**](https://store.arduino.cc/mkr-nb-1500).
 
@@ -13,10 +13,10 @@ This code needs 3 external libraries to run, that you can install using the buil
 - [ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino
 
 #### Library developed by Benoît Blanchon
-- [ArduinoJson](https://arduinojson.org/), a powerful library used to handle, store and parse JSON
+- [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily
 
 #### SAMD21 Arduino core
-- You also need to install the Arduino Core for Atmel's SAMD21 processor, used on the MKR family boards. Just open the "Boards Manager" and install the package called "Arduino SAMD Boards (32-bit ARM Cortex-M0+)".
+- You also need to install the Arduino core for Atmel SAMD21 processor, used on the boards of the MKR family. Open the [Boards Manager](https://www.arduino.cc/en/guide/cores) and install the package called "Arduino SAMD Boards (32-bit ARM Cortex-M0+)".
 
 ## How to use ##
 
@@ -24,7 +24,7 @@ This code needs 3 external libraries to run, that you can install using the buil
 > :warning: ***Important :*** the .ino file has to be named as the containing folder, so rename the folder "Arduino_MKR_NB_1500".
 2. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one.
 3. Create an [API key](https://liveobjects.orange-business.com/#/config/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
-4. In the [arduino_secrets.h](./arduino_secrets.h) file:
+4. In the **'arduino_secrets.h'** file:
    - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the [arduino_secrets.h](./arduino_secrets.h) file -keep the double quotes!
    - Fill in the cellular credentials if needed (pin code, APN information, etc). Most of the time, APN will set up automatically. Your SIM card may have a "0000" pin code, unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
 5. In the [Arduino_MKR1500NB.ino](./Arduino_MKR1500NB.ino) sketch, you can choose whether or not using TLS security with the MQTT protocol:
@@ -141,3 +141,28 @@ void loop() {
 You can control the connection and disconnection of your device using `LiveObjects_connect()` and `LiveObjects_disconnect()`.
 
 In order to check for any incoming configuration update or command, you need to keep the `LiveObjects_loop()` instruction in your main loop.
+
+## Toubleshooting ##
+### My payload is truncated on Live Objects ###
+This can happen with large payload, because of the fixed-size JSON storage allocated for processing your payload (512 bytes by default). You can allocate more room by modifying the value in the **'LiveObjects.h'** file at line 8:
+```c++
+#define PAYLOAD_DATA_SIZE 512
+```
+
+### My parameters are not registered on Live Objects ###
+As decribed above, it can happen if you have a large number of parameters. You need to allocate more room by modifying the value in the **'LiveObjects.h'** file at line 7:
+```c++
+#define PAYLOAD_DEVMGT_SIZE 256
+```
+
+### Only my 10 first parameters are registered on Live Objects ###
+By default, a maximum of 10 parameters can be managerd by the code sample. You can enable more parameters by modifying the value in the **'LiveObjects.h'** file at line 5:
+```c++
+#define PARAMETERS_NB_MAX 10
+```
+
+### Only my 10 first commands are working ###
+By default, a maximum of 10 commands can be managerd by the code sample. You can enable more commands by modifying the value in the **'LiveObjects.h'** file at line 6:
+```c++
+#define COMMANDS_NB_MAX 10
+```
