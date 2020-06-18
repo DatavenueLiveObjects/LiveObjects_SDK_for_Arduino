@@ -155,13 +155,13 @@ Same reason as above, it can happen if you have a large number of parameters. Yo
 #define PAYLOAD_DEVMGT_SIZE 256
 ```
 
-### Only my 10 first parameters are registered on Live Objects ###
+### Only my first 10 parameters are registered on Live Objects ###
 By default, a maximum of 10 parameters can be managerd by the code sample. You can enable more parameters by modifying the value in the **'LiveObjects.h'** file at line 5:
 ```c++
 #define PARAMETERS_NB_MAX 10
 ```
 
-### Only my 10 first commands are working ###
+### Only my first 10 commands are working ###
 By default, a maximum of 10 commands can be managerd by the code sample. You can enable more commands by modifying the value in the **'LiveObjects.h'** file at line 6:
 ```c++
 #define COMMANDS_NB_MAX 10
