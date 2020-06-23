@@ -148,8 +148,7 @@ void addParameter(const char* name, LOtD &variable, onParameterUpdateCallback ca
 
 template<typename LOtE>
 void addTypedParam(const char* name, LOtE *variable, LiveObjects_parameterType type, LiveObjects_variableType variableType, onParameterUpdateCallback callback) {
-  if (paramNb < PARAMETERS_NB_MAX)
-    parameters[paramNb++] = (LiveObjects_parameter) { name, variable, type, variableType, callback };
+  parameters[paramNb++] = (LiveObjects_parameter) { name, variable, type, variableType, callback };
 }
 
 template<typename LOtF>
@@ -416,10 +415,9 @@ void configurationManager(int messageSize = -1) {
  ******************************************************************************/
 
 void addCommand(const char* name, onCommandCallback callback) {
-  if (cmdNb < COMMANDS_NB_MAX)
-    commands[cmdNb++] = (LiveObjects_command) {
-      name, callback
-    };
+  commands[cmdNb++] = (LiveObjects_command) {
+    name, callback
+  };
 }
 
 void commandManager() {
@@ -516,9 +514,11 @@ void LiveObjects_connect() {
 
 void networkCheck() {
   unsigned long now = millis();
-  if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK)
+  if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
     if (nbAccess.status() != NB_READY || !mqttClient.connected())
       LiveObjects_connect();
+    lastKeepAliveNetwork = now;
+  }
 }
 
 void LiveObjects_disconnect() {
