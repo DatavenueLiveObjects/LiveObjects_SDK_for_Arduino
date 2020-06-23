@@ -25,7 +25,7 @@ This code needs 3 external libraries to run, that you can install using the buil
 3. Create an [API key](https://liveobjects.orange-business.com/#/config/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
 4. In the **'arduino_secrets.h'** file:
    - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
-   - Fill in the cellular credentials if needed (pin code, APN information, etc). Most of the time, APN will set up automatically. Your SIM card may have a "0000" pin code, unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
+   - Fill in the cellular credentials if needed (pin code, APN information, etc). Most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
 5. In the [Arduino_MKR1500NB.ino](./Arduino_MKR1500NB.ino) sketch, you can choose whether or not using TLS security with the MQTT protocol:
 ```c++
   // Set MQTT security:
