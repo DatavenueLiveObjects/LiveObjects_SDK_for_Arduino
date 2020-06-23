@@ -6,6 +6,7 @@
 #define COMMANDS_NB_MAX 10
 #define PAYLOAD_DEVMGT_SIZE 256
 #define PAYLOAD_DATA_SIZE 512
+#define MQTT_CLIENT_ID_LENGTH 16
 
 #define KEEP_ALIVE_NETWORK 10000
 
@@ -86,7 +87,7 @@ MqttClient mqttClient(nbClient);
  ******************************************************************************/
 
 // Live Objects constants
-char mqtt_id[16];
+char mqtt_id[MQTT_CLIENT_ID_LENGTH];
 const char mqtt_broker[] = "liveobjects.orange-business.com";
 const char mqtt_user[] = "json+device";    // MQTT username for 'device' role
 #if defined MQTT_TLS
@@ -383,7 +384,7 @@ void configurationManager(int messageSize = -1) {
       }
     publishMessage(mqtt_pubcfg, configOut);
   }
-  else { // messageSize==-1, compose & send initial config
+  else if (paramNb > 0) { // messageSize==-1, compose & send initial config
     StaticJsonDocument<0> configIn;
     for (uint8_t i = 0; i < paramNb; i++) {
       switch (parameters[i].type) {
@@ -448,10 +449,10 @@ void LiveObjects_connect() {
     NBModem modem;
     if(modem.begin()) {
       String imei = modem.getIMEI();
-      strncpy(mqtt_id, imei.c_str(), 16);
+      strncpy(mqtt_id, imei.c_str(), MQTT_CLIENT_ID_LENGTH);
     }
     else
-      strncpy(mqtt_id, "MKR1500NB", 16);
+      strncpy(mqtt_id, "MKR_1500_NB", MQTT_CLIENT_ID_LENGTH);
   }
   Serial.print("Connecting to cellular network");
   while (nbAccess.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
@@ -498,7 +499,9 @@ void LiveObjects_connect() {
 
   networkStatus = CONNECTED;
 
-  mqttClient.subscribe(mqtt_subcfg);
+  if (paramNb > 0)
+    mqttClient.subscribe(mqtt_subcfg);
+  if (cmdNb > 0)
   mqttClient.subscribe(mqtt_subcmd);
   
   if (!initialConfigDone) {
