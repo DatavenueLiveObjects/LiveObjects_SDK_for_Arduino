@@ -514,9 +514,11 @@ void LiveObjects_connect() {
 
 void networkCheck() {
   unsigned long now = millis();
-  if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK)
+  if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
     if (nbAccess.status() != NB_READY || !mqttClient.connected())
       LiveObjects_connect();
+    lastKeepAliveNetwork = now;
+  }
 }
 
 void LiveObjects_disconnect() {
