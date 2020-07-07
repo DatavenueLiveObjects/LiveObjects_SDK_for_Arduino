@@ -22,7 +22,7 @@ This code needs 3 external libraries to run, that you can install using the buil
 
 1. Clone or download the directory from Github.
 2. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one.
-3. Create an [API key](https://liveobjects.orange-business.com/#/config/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
+3. Create an [API key](https://liveobjects.orange-business.com/#/administration/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
 4. In the **'arduino_secrets.h'** file:
    - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
    - Fill in the cellular credentials if needed (pin code, APN information, etc). Most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
