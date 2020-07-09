@@ -36,12 +36,6 @@ void setup() {
   Serial.print(SW_REVISION);
   Serial.println("***");
 
-  // Declaring a simple parameter stored in the variable 'messageRate'.
-  // This parameter will become available for modification over the air from Live Objects
-  // upon the first connection: go to Devices > your device > Parameters
-  // Note that parameters are reset upon restart.
-  addParameter("message rate (milliseconds)", messageRate);
-
   LiveObjects_connect();                          // connects to the network + Live Objects
 }
 
