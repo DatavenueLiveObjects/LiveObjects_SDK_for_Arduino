@@ -448,7 +448,12 @@ void LiveObjects_connect() {
   if (!initialConfigDone) {
     NBModem modem;
     if(modem.begin()) {
-      String imei = modem.getIMEI();
+      String imei="";
+      for(int i=1;i<=3;i++){
+        imei=modem.getIMEI();
+        if(imei.length()!=0) break;
+        delay(100*i);
+      }
       strncpy(mqtt_id, imei.c_str(), MQTT_CLIENT_ID_LENGTH);
     }
     else{
