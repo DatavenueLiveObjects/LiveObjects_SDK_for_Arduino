@@ -1,8 +1,8 @@
-# Send data to LiveObjects
+# LiveObjects commands
 
 Parameters give you ability to configure device device from LiveObjects portal, in this example we will use parameter to adjust time rate on which messages from device are sent.
 
-![diagram](img/command_diagram.png)
+![diagram](img/parameter_diagram.png)
 
 ## Running
 first of all, be sure that you installed required libraries and generated api key mentioned in main README file, then:
@@ -18,7 +18,7 @@ If all went fine under **devices** tab on Live LiveObjects portal you should see
 **Is device sending data:**<br>
 Under data tab on LiveObjects portal you should see messages from stream identified by modem IMEI, along with values *{ "uptime": xxxxx }*
 
-## Send command
+## Send parameter
 Now using command which you can send from LiveObjects portal you can adjust rate on which messages are sent(default is 60s), to do this navigate to:<br>
 **Devices->urn:lo:nsid:mqtt:[your_device_imei]->Parameters** <br>
 You should see parameter named "message rate(miliseconds)" there, feel free to modify and test if message rate is sending changes accordingly:
