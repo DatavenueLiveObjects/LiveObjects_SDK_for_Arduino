@@ -9,4 +9,4 @@ const char SECRET_APN_PASS[] = "";		// specify the password for your APN (if nee
 	// You API key must have at least the predefined 'MQTT Device' rights profile
 	// (alternatively: 'Device Access' read + write rights if need to customise the rights).
 	// Please note that you *must* use a TLS connection (MQTTS) if you grant more rights to the API key.
-const char SECRET_LIVEOBJECTS_API_KEY[] = "...";
+const char SECRET_LIVEOBJECTS_API_KEY[] = "bf4ef02c497345128ecda296f15e9f02";
