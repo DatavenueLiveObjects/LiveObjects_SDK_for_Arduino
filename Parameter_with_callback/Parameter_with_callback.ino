@@ -1,4 +1,13 @@
 /******************************************************************************
+   DEFAULT VALUES
+ ******************************************************************************/
+
+// Set MQTT security:
+// comment the line to disable security (MQTT),
+// uncomment to activate TLS security (MQTTS).
+#define MQTT_TLS
+
+/******************************************************************************
    INCLUDES
  ******************************************************************************/
 
@@ -7,15 +16,6 @@
 #include <ArduinoJson.h>
 #include "arduino_secrets.h"
 #include "LiveObjects.h"
-
-/******************************************************************************
-   DEFAULT VALUES
- ******************************************************************************/
-
-// Set MQTT security:
-// comment the line to disable security (MQTT),
-// uncomment to activate TLS security (MQTTS).
-#define MQTT_TLS
 
 /******************************************************************************
    USER VARIABLES
@@ -51,7 +51,7 @@ void setup() {
   // upon the first connection: go to Devices > your device > Parameters
   // Note that parameters are reset upon restart.
   addParameter("message rate (seconds)", messageRate, processMsgRate);
-  
+
   LiveObjects_connect();                          // connects to the network + Live Objects
 }
 

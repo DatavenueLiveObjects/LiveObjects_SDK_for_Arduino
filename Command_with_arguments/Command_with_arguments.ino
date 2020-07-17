@@ -1,4 +1,14 @@
 /******************************************************************************
+   DEFAULT VALUES
+ ******************************************************************************/
+
+// Set MQTT security:
+// comment the line to disable security (MQTT),
+// uncomment to activate TLS security (MQTTS).
+#define MQTT_TLS
+
+
+/******************************************************************************
    INCLUDES
  ******************************************************************************/
 
@@ -7,15 +17,6 @@
 #include <ArduinoJson.h>
 #include "arduino_secrets.h"
 #include "LiveObjects.h"
-
-/******************************************************************************
-   DEFAULT VALUES
- ******************************************************************************/
-
-// Set MQTT security:
-// comment the line to disable security (MQTT),
-// uncomment to activate TLS security (MQTTS).
-#define MQTT_TLS
 
 /******************************************************************************
    USER VARIABLES
@@ -40,12 +41,12 @@ void blinkLED(const String arguments, String &response) {
   // example of 'arguments' content: "{\"time ON\":250,\"time OFF\":750,\"repetitions\":5}"
   StaticJsonDocument<128> incomingArguments;  // creation of a JSON document called "incomingArguments" that will holds the arguments
   deserializeJson(incomingArguments, arguments);  // extraction of JSON data
-  
+
   int timeOn = incomingArguments["time ON"];  // arguments are now accessible using their name
   int timeOff = incomingArguments["time OFF"];
   int reps = incomingArguments["repetitions"];
   unsigned long elaspedTime = millis();   // will keep track of time in order to compute the animation duration
-  
+
   pinMode(LED_BUILTIN, OUTPUT);
   for (byte i = 0; i < reps; i++) {
     digitalWrite(LED_BUILTIN, HIGH);
@@ -71,7 +72,7 @@ void setup() {
 
   // Declaring a simple commands hadled by the function 'blinkLED'.
   addCommand("blink", blinkLED);
-  
+
   LiveObjects_connect();                          // connects to the network + Live Objects
 }
 
