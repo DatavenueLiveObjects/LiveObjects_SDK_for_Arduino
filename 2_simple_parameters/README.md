@@ -21,6 +21,6 @@ Under data tab on Live Objects portal you should see messages sent by your devic
 ## Update parameter
 Now you can adjust the rate on which messages are sent from Live Objects (default 60000ms). To do this navigate to:<br>
 **Devices->urn:lo:nsid:mqtt:[your_device_imei]->Parameters** <br>
-You should see parameter named "message rate (miliseconds)" there; feel free to modify and test if message rate is sending changes accordingly:
+You should see a parameter named "message rate (miliseconds)" there. Feel free to modify the parameter: click on the parameter's name, modify the value and hit **Update**. Don't forget to click on the **Send changes** button to send the new value to your device.
 
 ![parameter](img/parameter.png)
