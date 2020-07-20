@@ -1,25 +1,26 @@
-# LiveObjects commands
+# Live Objects parameters
 
-Parameters give you ability to configure device device from LiveObjects portal, in this example we will use parameter to adjust time rate on which messages from device are sent.
+Parameters give you ability to configure your device over the air from Live Objects. In this example we will use a parameter to adjust time rate on which messages from device are sent.
 
 ![diagram](img/parameter_diagram.png)
 
 ## Running
-first of all, be sure that you installed required libraries and generated api key mentioned in main README file, then:
-1. Open "2_simple_parameters.ino" sketch using Arduino IDE
-2. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in arduino_secrets.h with api key you generated .
-3. Upload *2_simple_parameters.ino* sketch to your Arduino MKR1500 board
+First of all, be sure that you installed the required libraries and generated an API key mentioned in the main README file, then:
+1. Open "1_send_data.ino" sketch using Arduino IDE
+2. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in arduino_secrets.h with API key you generated
+3. Upload *2_simple_parameters.ino* sketch to your Arduino MKR NB 1500 board
 
 
 ## Verify
-**Is device is online:**<br>
-If all went fine under **devices** tab on Live LiveObjects portal you should see online device identified by modem IMEI
+**Is device online:**<br>
+If all went fine under **devices** tab on Live Live Objects portal you should see online your device identified by its modem IMEI:
 
 **Is device sending data:**<br>
-Under data tab on LiveObjects portal you should see messages from stream identified by modem IMEI, along with values *{ "uptime": xxxxx }*
+Under data tab on Live Objects portal you should see messages sent by your device, along with values *{ "uptime": xxxxx }*
 
-## Send parameter
-Now using command which you can send from LiveObjects portal you can adjust rate on which messages are sent(default is 60s), to do this navigate to:<br>
+## Update parameter
+Now you can adjust the rate on which messages are sent from the Live Objects (default is 60s). To do this navigate to:<br>
 **Devices->urn:lo:nsid:mqtt:[your_device_imei]->Parameters** <br>
-You should see parameter named "message rate(miliseconds)" there, feel free to modify and test if message rate is sending changes accordingly:
+You should see parameter named "message rate (miliseconds)" there; feel free to modify and test if message rate is sending changes accordingly:
+
 ![parameter](img/parameter.png)
