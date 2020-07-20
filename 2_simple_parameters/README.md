@@ -19,7 +19,7 @@ If all went fine under **devices** tab on Live Live Objects portal you should se
 Under data tab on Live Objects portal you should see messages sent by your device, along with values *{ "uptime": xxxxx }*
 
 ## Update parameter
-Now you can adjust the rate on which messages are sent from the Live Objects (default is 60s). To do this navigate to:<br>
+Now you can adjust the rate on which messages are sent from Live Objects (default 60000ms). To do this navigate to:<br>
 **Devices->urn:lo:nsid:mqtt:[your_device_imei]->Parameters** <br>
 You should see parameter named "message rate (miliseconds)" there; feel free to modify and test if message rate is sending changes accordingly:
 
