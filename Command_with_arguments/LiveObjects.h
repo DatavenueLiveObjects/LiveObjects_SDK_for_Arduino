@@ -448,11 +448,18 @@ void LiveObjects_connect() {
   if (!initialConfigDone) {
     NBModem modem;
     if(modem.begin()) {
-      String imei = modem.getIMEI();
+      String imei="";
+      for(int i=1;i<=3;i++){
+        imei=modem.getIMEI();
+        if(imei.length()!=0) break;
+        delay(100*i);
+      }
       strncpy(mqtt_id, imei.c_str(), MQTT_CLIENT_ID_LENGTH);
     }
-    else
+    else{
       strncpy(mqtt_id, "MKR_1500_NB", MQTT_CLIENT_ID_LENGTH);
+    }
+
   }
   Serial.print("Connecting to cellular network");
   while (nbAccess.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
@@ -503,7 +510,7 @@ void LiveObjects_connect() {
     mqttClient.subscribe(mqtt_subcfg);
   if (cmdNb > 0)
   mqttClient.subscribe(mqtt_subcmd);
-  
+
   if (!initialConfigDone) {
     configurationManager();
     initialConfigDone = true;

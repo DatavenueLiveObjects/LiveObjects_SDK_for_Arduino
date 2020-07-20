@@ -1,4 +1,13 @@
 /******************************************************************************
+   DEFAULT VALUES
+ ******************************************************************************/
+
+// Set MQTT security:
+// comment the line to disable security (MQTT),
+// uncomment to activate TLS security (MQTTS).
+#define MQTT_TLS
+
+/******************************************************************************
    INCLUDES
  ******************************************************************************/
 
@@ -7,15 +16,6 @@
 #include <ArduinoJson.h>
 #include "arduino_secrets.h"
 #include "LiveObjects.h"
-
-/******************************************************************************
-   DEFAULT VALUES
- ******************************************************************************/
-
-// Set MQTT security:
-// comment the line to disable security (MQTT),
-// uncomment to activate TLS security (MQTTS).
-#define MQTT_TLS
 
 /******************************************************************************
    USER VARIABLES
