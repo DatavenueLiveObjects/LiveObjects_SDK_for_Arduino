@@ -1,6 +1,6 @@
-# LiveObjects device commands with arguments
+# Live Objects device commands with arguments
 
-the Commands can be used to trigger actions on the device. Additionally when creating the command on Live Objects, you can add some arguments which will be handled by device.
+Commands can be used to trigger actions on the device. Additionally when creating the command on Live Objects, you can add some arguments which will be handled by device.
 
 ![diagram](img/command_with_args.png)
 
