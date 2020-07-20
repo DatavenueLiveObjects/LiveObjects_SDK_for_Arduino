@@ -26,6 +26,6 @@ Finally define your command like this:
 
 ![diagram](img/command_send.png)
 
-After clicking "Verify" your command should be sent to device and as an effect you should see the onboard LED blinking 5 times:
+After clicking "Validate" your command should be sent to the device and as an effect you should see the onboard LED blinking 5 times:
 
 ![blink](img/blinkCommand.gif)
