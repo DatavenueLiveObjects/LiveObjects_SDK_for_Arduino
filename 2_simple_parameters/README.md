@@ -6,7 +6,7 @@ Parameters give you ability to configure your device over the air from Live Obje
 
 ## Running
 First of all, be sure that you installed the required libraries and generated an API key mentioned in the main README file, then:
-1. Open "1_send_data.ino" sketch using Arduino IDE
+1. Open "2_simple_parameters.ino" sketch using Arduino IDE
 2. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in arduino_secrets.h with API key you generated
 3. Upload *2_simple_parameters.ino* sketch to your Arduino MKR NB 1500 board
 
