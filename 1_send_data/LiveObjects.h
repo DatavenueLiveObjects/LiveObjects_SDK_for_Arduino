@@ -19,6 +19,7 @@
 #include <ArduinoMqttClient.h>
 #include <MKRNB.h>
 #include <ArduinoJson.h>
+#include <ctime>
 #include "arduino_secrets.h"
 #include "LiveObjectsCert.h"
 
@@ -58,7 +59,19 @@ enum LiveObjects_variableType {
   T_STRING,
 };
 
+enum Protocol
+{
+  MQTT,
+  //,SMS
+  //,LORA
+};
 
+enum Security
+{
+  NONE
+  ,TLS
+  //,DTLS
+};
 
 
 typedef void (*onParameterUpdateCallback)();
@@ -66,17 +79,18 @@ typedef void (*onCommandCallback)(const String, String&);
 
 class LiveObjects
 {
-   public:
-   static LiveObjects& get()
-   {
-      static LiveObjects lo;
-      return lo;
-   }
+public:
+  static LiveObjects& get(Protocol p=MQTT, Security s=TLS, bool bDebug=true)
+  {
+     static LiveObjects lo(p,s,bDebug);
+     return lo;
+  }
 
 private:
-    LiveObjects();
-    LiveObjects(const LiveObjects&) = delete;
-    LiveObjects& operator=(const LiveObjects&) = delete;
+  LiveObjects(Protocol p, Security s, bool bDebug);
+  ~LiveObjects();
+  LiveObjects(const LiveObjects&) = delete;
+  LiveObjects& operator=(const LiveObjects&) = delete;
 
 /******************************************************************************
    STRUCTS
@@ -102,13 +116,9 @@ public:
 private:
     // Live Objects constants
     char mqtt_id[MQTT_CLIENT_ID_LENGTH];
+    uint16_t mqtt_port=1883;                  // default MQTT port
     const char* mqtt_broker = "liveobjects.orange-business.com";
     const char* mqtt_user = "json+device";    // MQTT username for 'device' role
-    #if defined MQTT_TLS
-    const uint16_t mqtt_port = 8883;         // TLS MQTT port
-    #else
-    const uint16_t mqtt_port = 1883;         // default MQTT port
-    #endif
     const char* mqtt_pubdata = "dev/data";     // topic for publishing data
     const char* mqtt_subcfg = "dev/cfg/upd";   // subscribed topic for configuration updates
     const char* mqtt_pubcfg = "dev/cfg";       // topic used to publish confuguration
@@ -129,6 +139,19 @@ private:
 ******************************************************************************/
 
 public:
+   void setProtocol(Protocol p);
+   void setSecurity(Security s);
+   void enableDebug(bool b);
+   void setClientID(const char* id);
+
+public:
+   void addTimestamp(time_t timestamp);
+   void addLocation(double lat, double lon, float alt);
+   void addNetworkInfo();
+   void clearPayload();
+public:
+  bool debugEnabled();
+public:
     void publishMessage(const char* topic, JsonDocument& payload);
     void connect();
     void networkCheck();
@@ -140,7 +163,7 @@ public:
     void loop();
 
 
-
+private:
  /******************************************************************************
    CONFIGURATION MANAGER
  ******************************************************************************/
@@ -151,7 +174,12 @@ public:
     void addCommand(const char* name, onCommandCallback callback);
     void commandManager();
 
-
+/******************************************************************************
+   PRIVATE FUNCTIONS
+ ******************************************************************************/
+    template<typename T>
+    void outputDebug(T buf);
+public:
 /******************************************************************************
    TEMPLATE FUNCTIONS
 ******************************************************************************/
@@ -178,12 +206,9 @@ private:
     LiveObjects_networkStatus networkStatus = DISCONNECTED;
     StaticJsonDocument<PAYLOAD_DATA_SIZE> easyDataPayload;
     NB nbAccess;
-    #if defined MQTT_TLS
-    NBSSLClient nbClient;   // for TLS MQTT connection to Live Objects
-    #else
-    NBClient nbClient;      // for plain MQTT connection to Live Objects
-    #endif
-    MqttClient mqttClient;
+    NBClient client;
+    NBSSLClient tlsClient;
+    MqttClient *mqttClient;
 /******************************************************************************
    VARIABLES
 ******************************************************************************/
@@ -194,6 +219,7 @@ private:
     bool initialConfigDone = false;       // controls if the inital config has been sent to Live Objects
     unsigned long lastKeepAliveMQTT = 0;
     unsigned long lastKeepAliveNetwork = 0;
+    bool m_bDebug;
 
 /******************************************************************************
    PARAM TYPERS
@@ -253,4 +279,10 @@ inline void LiveObjects::updateParameter(const LiveObjects_parameter param, LOtF
 template<typename LOtH>
 inline void LiveObjects::addToPayload(const String label, LOtH value) {
   easyDataPayload[JSONvalue][label] = value;
+}
+
+template<typename T>
+inline void LiveObjects::outputDebug(T buf)
+{
+  if(m_bDebug) Serial.println(buf);
 }

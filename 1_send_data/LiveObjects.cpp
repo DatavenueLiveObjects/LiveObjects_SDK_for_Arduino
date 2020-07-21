@@ -1,10 +1,22 @@
 #include "LiveObjects.h"
 
-LiveObjects::LiveObjects()
+LiveObjects::LiveObjects(Protocol p, Security s, bool bDebug)
     :
-     mqttClient(nbClient)
-{}
-
+    m_bDebug(bDebug)
+{
+  memset(mqtt_id,'\0',MQTT_CLIENT_ID_LENGTH);
+  if(s==Security::TLS){
+    mqtt_port=8883;
+    mqttClient=new MqttClient(tlsClient);
+  }else{
+    mqtt_port=1883;
+    mqttClient=new MqttClient(client);
+  }
+}
+LiveObjects::~LiveObjects()
+{
+  delete mqttClient;
+}
 
 
 /******************************************************************************
@@ -146,10 +158,10 @@ void LiveObjects::configurationManager(int messageSize) {
   StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configOut;
   if (messageSize >= 0) { // config update received
     StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configIn;
-    deserializeJson(configIn, mqttClient);
+    deserializeJson(configIn, *mqttClient);
 
     serializeJsonPretty(configIn, Serial);
-    Serial.print('\n');
+    outputDebug('\n');
 
     configOut = configIn;
     for (uint8_t i = 0; i < paramNb; i++)
@@ -199,11 +211,10 @@ void LiveObjects::addCommand(const char* name, onCommandCallback callback) {
 void LiveObjects::commandManager() {
   StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdIn;
   StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdOut;
-  deserializeJson(cmdIn, mqttClient);
+  deserializeJson(cmdIn, *mqttClient);
 
   serializeJsonPretty(cmdIn, Serial);
-  Serial.print('\n');
-
+  outputDebug('\n');
   for (uint8_t i = 0; i < cmdNb; i++) // only with MQTT or SMS !!
     if (cmdIn[F("req")] == commands[i].label) {
       cmdOut[JSONcid] = cmdIn[JSONcid];
@@ -220,34 +231,44 @@ void LiveObjects::commandManager() {
    CONNECTION MANAGER
  ******************************************************************************/
 
-void LiveObjects::connect() {
-  if (!initialConfigDone) {
+void LiveObjects::connect()
+{
+  //Set client id as IMEI
+  if (!initialConfigDone)
+  {
     NBModem modem;
-    if(modem.begin()) {
-      String imei="";
-      for(int i=1;i<=3;i++){
-        imei=modem.getIMEI();
-        if(imei.length()!=0) break;
-        delay(100*i);
+    if(modem.begin())
+    {
+      if(mqtt_id[0]=='\0')
+      {
+        String imei="";
+        for(int i=1;i<=3;i++)
+        {
+          imei=modem.getIMEI();
+          if(imei.length()!=0) break;
+          delay(100*i);
+        }
+        strncpy(mqtt_id, imei.c_str(), MQTT_CLIENT_ID_LENGTH);
       }
-      strncpy(mqtt_id, imei.c_str(), MQTT_CLIENT_ID_LENGTH);
     }
-    else{
-      strncpy(mqtt_id, "MKR_1500_NB", MQTT_CLIENT_ID_LENGTH);
+    else
+    {
+      outputDebug("Failed to initialize modem!");
+      while(true){}
     }
 
   }
-  Serial.print("Connecting to cellular network");
-  while (nbAccess.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
-    Serial.print(".");
-  Serial.println("\nYou're connected to the network");
+    outputDebug("Connecting to cellular network");
+    while (nbAccess.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
+      outputDebug(".");
+    outputDebug("\nYou're connected to the network");
 
-  #if defined MQTT_TLS    // only for TLS ; loads DigiCert CA into SARA module
+  if(mqtt_port==8883){
     if (!DigiCert_rootCA_loaded) {
-      Serial.println("Loading DigiCert Root CA certificate");
+      outputDebug("Loading DigiCert Root CA certificate");
       MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
       if (MODEM.waitForPrompt() != 1) {
-        Serial.print("Problem loading certificate!\nStopping here.");
+        outputDebug("Problem loading certificate!\nStopping here.");
         while (1) ;
       }
       else {
@@ -255,61 +276,62 @@ void LiveObjects::connect() {
         int ready;
         while (!MODEM.ready()) ;
         DigiCert_rootCA_loaded = true;
-        Serial.println("Certificate loaded");
+        outputDebug("Certificate loaded");
       }
     }
-  #endif
+  }
 
   if (sizeof(SECRET_LIVEOBJECTS_API_KEY) != 33) // check if API key seems correct
   {
-    Serial.print("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.");
+    outputDebug("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.");
     while (1) ;
   }
 
   if (!initialConfigDone) {
-    mqttClient.setId(mqtt_id);
-    mqttClient.setUsernamePassword(mqtt_user, SECRET_LIVEOBJECTS_API_KEY);
-    mqttClient.onMessage(onMQTTmessage);
+    mqttClient->setId(mqtt_id);
+    mqttClient->setUsernamePassword(mqtt_user, SECRET_LIVEOBJECTS_API_KEY);
+    mqttClient->onMessage(onMQTTmessage);
   }
 
-  Serial.print("Connecting to MQTT broker '");
-  Serial.print(mqtt_broker);
-  Serial.print("'");
+  outputDebug("Connecting to MQTT broker '");
+  outputDebug(mqtt_broker);
+  outputDebug(mqtt_port);
+  outputDebug("'");
 
-  while (!mqttClient.connect(mqtt_broker, mqtt_port))
-    Serial.print(".");
-  Serial.println("\nYou're connected to the MQTT broker");
+
+  while (!mqttClient->connect(mqtt_broker, mqtt_port)) outputDebug(".");
+  outputDebug("\nYou're connected to the MQTT broker");
 
   networkStatus = CONNECTED;
 
   if (paramNb > 0)
-    mqttClient.subscribe(mqtt_subcfg);
+    mqttClient->subscribe(mqtt_subcfg);
   if (cmdNb > 0)
-  mqttClient.subscribe(mqtt_subcmd);
+  mqttClient->subscribe(mqtt_subcmd);
 
   if (!initialConfigDone) {
     configurationManager();
     initialConfigDone = true;
   }
 
-  mqttClient.poll();
+  mqttClient->poll();
 }
 
 void LiveObjects::networkCheck() {
   unsigned long now = millis();
   if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
-    if (nbAccess.status() != NB_READY || !mqttClient.connected())
+    if (nbAccess.status() != NB_READY || !mqttClient->connected())
         connect();
     lastKeepAliveNetwork = now;
   }
 }
 
 void LiveObjects::disconnect() {
-  Serial.println("\nClosing MQTT connection...");
-  mqttClient.stop();
-  Serial.println("Disconnecting from cellular network...");
+  outputDebug("\nClosing MQTT connection...");
+  mqttClient->stop();
+  outputDebug("Disconnecting from cellular network...");
   nbAccess.shutdown();
-  Serial.println("Offline.\n");
+  outputDebug("Offline.\n");
   networkStatus = DISCONNECTED;
 }
 
@@ -319,10 +341,10 @@ void LiveObjects::disconnect() {
 
 void LiveObjects::onMQTTmessage(int messageSize) {
   LiveObjects& lo = LiveObjects::get();
-  String topic = lo.mqttClient.messageTopic();
-  Serial.print("Received a message on topic '");
-  Serial.print(topic);
-  Serial.println("':");
+  String topic = lo.mqttClient->messageTopic();
+  lo.outputDebug("Received a message on topic '");
+  lo.outputDebug(topic);
+  lo.outputDebug("':");
 
   if (topic == lo.mqtt_subcfg)
     lo.configurationManager(messageSize);
@@ -349,14 +371,16 @@ void LiveObjects::publishMessage(const char* topic, JsonDocument& payload) {
   if (networkStatus != CONNECTED)
         connect();
 
-  Serial.print("Publishing message on topic '");
-  Serial.print(topic);
-  Serial.println("':");
+
+  outputDebug("Publishing message on topic '");
+  outputDebug(topic);
+  outputDebug("':");
   serializeJsonPretty(payload, Serial);
-  Serial.print('\n');
-  mqttClient.beginMessage(topic);
-  serializeJson(payload, mqttClient);
-  mqttClient.endMessage();
+  outputDebug('\n');
+
+  mqttClient->beginMessage(topic);
+  serializeJson(payload, *mqttClient);
+  mqttClient->endMessage();
 
   if (lastStatus == DISCONNECTED)
         disconnect();
@@ -369,6 +393,54 @@ void LiveObjects::publishMessage(const char* topic, JsonDocument& payload) {
 void LiveObjects::loop() {
   if (networkStatus == CONNECTED) {
     networkCheck();
-    mqttClient.poll();
+    mqttClient->poll();
   }
+}
+void LiveObjects::setProtocol(Protocol p)
+{
+//TODO
+}
+void LiveObjects::setSecurity(Security s)
+{
+//TODO
+}
+void LiveObjects::enableDebug(bool b)
+{
+  m_bDebug = b;
+}
+void LiveObjects::setClientID(const char* id)
+{
+  memset(mqtt_id,'\0',MQTT_CLIENT_ID_LENGTH);
+  strcpy(mqtt_id,id);
+}
+void LiveObjects::addTimestamp(time_t timestamp)
+{
+  char buf[sizeof "2011-10-08T07:07:09Z"];
+  strftime(buf, sizeof buf, "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
+  easyDataPayload["timestamp"] = buf;
+}
+void LiveObjects::addLocation(double lat, double lon, float alt)
+{
+  JsonObject obj = easyDataPayload[JSONvalue].createNestedObject("position");
+  obj["latitude"] = lat;
+  obj["longitude"] = lon;
+  obj["altitude"]=alt;
+}
+void LiveObjects::addNetworkInfo()
+{
+  NBScanner scanner;
+  JsonObject obj = easyDataPayload[JSONvalue].createNestedObject("networkInfo");
+  obj["connection_status"] = nbAccess.status() == NB_NetworkStatus_t::NB_READY ? "connected":"disconnected";
+  obj["strength"] = scanner.getSignalStrength();
+  obj["carrier"]=scanner.getCurrentCarrier();
+}
+
+void LiveObjects::clearPayload()
+{
+  easyDataPayload.clear();
+}
+
+bool LiveObjects::debugEnabled()
+{
+  return m_bDebug;
 }
