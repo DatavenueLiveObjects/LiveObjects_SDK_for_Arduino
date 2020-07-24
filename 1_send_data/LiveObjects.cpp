@@ -1,21 +1,21 @@
+#define DO_NOT_DEFINE_LO
 #include "LiveObjects.h"
 
-LiveObjects::LiveObjects(Protocol p, Security s, bool bDebug)
+
+LiveObjectsBase::LiveObjectsBase()
     :
-    m_bDebug(bDebug)
+     m_bDebug(false)
+    ,m_bInitialized(false)
+    ,m_bInitialMqttConfig(false)
+    ,m_bCertLoaded(false)
+    ,m_pClient(nullptr)
+    ,m_pMqttclient(nullptr)
 {
-  memset(mqtt_id,'\0',MQTT_CLIENT_ID_LENGTH);
-  if(s==Security::TLS){
-    mqtt_port=8883;
-    mqttClient=new MqttClient(tlsClient);
-  }else{
-    mqtt_port=1883;
-    mqttClient=new MqttClient(client);
-  }
 }
-LiveObjects::~LiveObjects()
+LiveObjectsBase::~LiveObjectsBase()
 {
-  delete mqttClient;
+  delete m_pMqttclient;
+  delete m_pClient;
 }
 
 
@@ -23,86 +23,85 @@ LiveObjects::~LiveObjects()
    PARAM TYPERS
  ******************************************************************************/
 
-void LiveObjects::paramTyper(const char* name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, UNSIGNED_INTEGER, T_BOOL, callback);
   else
     addTypedParam(name, variable, type, T_BOOL, callback);
 }
-void LiveObjects::paramTyper(const char* name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_CHAR, callback);
   else
     addTypedParam(name, variable, type, T_CHAR, callback);
 }
-void LiveObjects::paramTyper(const char* name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT, callback);
   else
     addTypedParam(name, variable, type, T_INT, callback);
 }
-void LiveObjects::paramTyper(const char* name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT8, callback);
   else
     addTypedParam(name, variable, type, T_INT8, callback);
 }
-void LiveObjects::paramTyper(const char* name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT16, callback);
   else
     addTypedParam(name, variable, type, T_INT16, callback);
 }
-void LiveObjects::paramTyper(const char* name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT32, callback);
   else
     addTypedParam(name, variable, type, T_INT32, callback);
 }
-void LiveObjects::paramTyper(const char* name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, UNSIGNED_INTEGER, T_UINT, callback);
   else
     addTypedParam(name, variable, type, T_UINT, callback);
 }
-void LiveObjects::paramTyper(const char* name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, UNSIGNED_INTEGER, T_UINT8, callback);
   else
     addTypedParam(name, variable, type, T_UINT8, callback);
 }
-void LiveObjects::paramTyper(const char* name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, UNSIGNED_INTEGER, T_UINT16, callback);
   else
     addTypedParam(name, variable, type, T_UINT16, callback);
 }
-void LiveObjects::paramTyper(const char* name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, UNSIGNED_INTEGER, T_UINT32, callback);
   else
     addTypedParam(name, variable, type, T_UINT32, callback);
 }
-void LiveObjects::paramTyper(const char* name, double* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, double* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, DECIMAL, T_DOUBLE, callback);
   else
     addTypedParam(name, variable, type, T_DOUBLE, callback);
 }
-void LiveObjects::paramTyper(const char* name, float* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, float* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, DECIMAL, T_FLOAT, callback);
   else
     addTypedParam(name, variable, type, T_FLOAT, callback);
 }
-void LiveObjects::paramTyper(const char* name, String* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+void LiveObjectsBase::paramTyper(const char* name, String* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, STRING, T_STRING, callback);
   else
     addTypedParam(name, variable, type, T_STRING, callback);
 }
-
-void LiveObjects::ptrTyper(const LiveObjects_parameter param, const JsonDocument& configIn, JsonDocument& configOut) {
+void LiveObjectsBase::ptrTyper(const LiveObjects_parameter param, const JsonDocument& configIn, JsonDocument& configOut) {
   switch (param.variableType) {
     case T_BOOL:
       updateParameter(param, (bool*)param.value, configIn, configOut);
@@ -143,8 +142,8 @@ void LiveObjects::ptrTyper(const LiveObjects_parameter param, const JsonDocument
     case T_STRING:
       String* ptr = (String*)param.value;
       if (!configIn.isNull())
-      *ptr = configIn[JSONcfg][param.label][JSONcfgValue].as<String>();
-      configOut[JSONcfg][param.label][JSONcfgValue] = (*ptr).c_str();
+      *ptr = configIn[JSONCFG][param.label][JSONCFGVALUE].as<String>();
+      configOut[JSONCFG][param.label][JSONCFGVALUE] = (*ptr).c_str();
       break;
   }
 }
@@ -154,47 +153,47 @@ void LiveObjects::ptrTyper(const LiveObjects_parameter param, const JsonDocument
    CONFIGURATION MANAGER
  ******************************************************************************/
 
-void LiveObjects::configurationManager(int messageSize) {
+void LiveObjectsBase::configurationManager(int messageSize) {
   StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configOut;
   if (messageSize >= 0) { // config update received
     StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configIn;
-    deserializeJson(configIn, *mqttClient);
+    deserializeJson(configIn, *m_pMqttclient);
 
     serializeJsonPretty(configIn, Serial);
     outputDebug('\n');
 
     configOut = configIn;
     for (uint8_t i = 0; i < paramNb; i++)
-      if (configIn[JSONcfg].containsKey(parameters[i].label)) {
+      if (configIn[JSONCFG].containsKey(parameters[i].label)) {
         ptrTyper(parameters[i], configIn, configOut);
         if (parameters[i].callback != NULL)
           parameters[i].callback();
       }
-    publishMessage(mqtt_pubcfg, configOut);
+    publishMessage(MQTT_PUBCFG, configOut);
   }
   else if (paramNb > 0) { // messageSize==-1, compose & send initial config
     StaticJsonDocument<0> configIn;
     for (uint8_t i = 0; i < paramNb; i++) {
       switch (parameters[i].type) {
         case INTEGER:
-          configOut[JSONcfg][parameters[i].label][JSONcfgType] = F("i32");
+          configOut[JSONCFG][parameters[i].label][JSONCFGTYPE] = F("i32");
           break;
         case UNSIGNED_INTEGER:
-          configOut[JSONcfg][parameters[i].label][JSONcfgType] = F("u32");
+          configOut[JSONCFG][parameters[i].label][JSONCFGTYPE] = F("u32");
           break;
         case STRING:
-          configOut[JSONcfg][parameters[i].label][JSONcfgType] = F("str");
+          configOut[JSONCFG][parameters[i].label][JSONCFGTYPE] = F("str");
           break;
         case BINARY:
-          configOut[JSONcfg][parameters[i].label][JSONcfgType] = F("bin");
+          configOut[JSONCFG][parameters[i].label][JSONCFGTYPE] = F("bin");
           break;
         case DECIMAL:
-          configOut[JSONcfg][parameters[i].label][JSONcfgType] = F("f64");
+          configOut[JSONCFG][parameters[i].label][JSONCFGTYPE] = F("f64");
           break;
       }
       ptrTyper(parameters[i], configIn, configOut);
     }
-    publishMessage(mqtt_pubcfg, configOut);
+    publishMessage(MQTT_PUBCFG, configOut);
   }
 }
 
@@ -202,135 +201,53 @@ void LiveObjects::configurationManager(int messageSize) {
    COMMAND MANAGEMENT
  ******************************************************************************/
 
-void LiveObjects::addCommand(const char* name, onCommandCallback callback) {
+void LiveObjectsBase::addCommand(const char* name, onCommandCallback callback) {
   commands[cmdNb++] = (LiveObjects_command) {
     name, callback
   };
 }
 
-void LiveObjects::commandManager() {
+void LiveObjectsBase::commandManager() {
   StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdIn;
   StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdOut;
-  deserializeJson(cmdIn, *mqttClient);
+  deserializeJson(cmdIn, *m_pMqttclient);
 
   serializeJsonPretty(cmdIn, Serial);
   outputDebug('\n');
   for (uint8_t i = 0; i < cmdNb; i++) // only with MQTT or SMS !!
     if (cmdIn[F("req")] == commands[i].label) {
-      cmdOut[JSONcid] = cmdIn[JSONcid];
+      cmdOut[JSONCID] = cmdIn[JSONCID];
       String response;
       commands[i].callback(cmdIn[F("arg")].as<String>(), response);
       if (response.length() != 0)
         cmdOut[F("res")] = serialized(response);
       break;
     }
-  publishMessage(mqtt_pubcmd, cmdOut);
+  publishMessage(MQTT_PUBCMD, cmdOut);
 }
 
 /******************************************************************************
    CONNECTION MANAGER
  ******************************************************************************/
 
-void LiveObjects::connect()
+void LiveObjectsBase::connect()
 {
-  //Set client id as IMEI
-  if (!initialConfigDone)
-  {
-    NBModem modem;
-    if(modem.begin())
-    {
-      if(mqtt_id[0]=='\0')
-      {
-        String imei="";
-        for(int i=1;i<=3;i++)
-        {
-          imei=modem.getIMEI();
-          if(imei.length()!=0) break;
-          delay(100*i);
-        }
-        strncpy(mqtt_id, imei.c_str(), MQTT_CLIENT_ID_LENGTH);
-      }
-    }
-    else
-    {
-      outputDebug("Failed to initialize modem!");
-      while(true){}
-    }
-
-  }
-    outputDebug("Connecting to cellular network");
-    while (nbAccess.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
-      outputDebug(".");
-    outputDebug("\nYou're connected to the network");
-
-  if(mqtt_port==8883){
-    if (!DigiCert_rootCA_loaded) {
-      outputDebug("Loading DigiCert Root CA certificate");
-      MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
-      if (MODEM.waitForPrompt() != 1) {
-        outputDebug("Problem loading certificate!\nStopping here.");
-        while (1) ;
-      }
-      else {
-        MODEM.write(LO_ROOT_CERT.data, LO_ROOT_CERT.size);
-        int ready;
-        while (!MODEM.ready()) ;
-        DigiCert_rootCA_loaded = true;
-        outputDebug("Certificate loaded");
-      }
-    }
-  }
-
-  if (sizeof(SECRET_LIVEOBJECTS_API_KEY) != 33) // check if API key seems correct
-  {
-    outputDebug("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.");
-    while (1) ;
-  }
-
-  if (!initialConfigDone) {
-    mqttClient->setId(mqtt_id);
-    mqttClient->setUsernamePassword(mqtt_user, SECRET_LIVEOBJECTS_API_KEY);
-    mqttClient->onMessage(onMQTTmessage);
-  }
-
-  outputDebug("Connecting to MQTT broker '");
-  outputDebug(mqtt_broker);
-  outputDebug(mqtt_port);
-  outputDebug("'");
-
-
-  while (!mqttClient->connect(mqtt_broker, mqtt_port)) outputDebug(".");
-  outputDebug("\nYou're connected to the MQTT broker");
-
-  networkStatus = CONNECTED;
-
-  if (paramNb > 0)
-    mqttClient->subscribe(mqtt_subcfg);
-  if (cmdNb > 0)
-  mqttClient->subscribe(mqtt_subcmd);
-
-  if (!initialConfigDone) {
-    configurationManager();
-    initialConfigDone = true;
-  }
-
-  mqttClient->poll();
+  connectNetwork();
+  connectMQTT();
 }
 
-void LiveObjects::networkCheck() {
+void LiveObjectsBase::networkCheck() {
   unsigned long now = millis();
   if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
-    if (nbAccess.status() != NB_READY || !mqttClient->connected())
-        connect();
+    checkNetwork();
+    checkMQTT();
     lastKeepAliveNetwork = now;
   }
 }
 
-void LiveObjects::disconnect() {
-  outputDebug("\nClosing MQTT connection...");
-  mqttClient->stop();
-  outputDebug("Disconnecting from cellular network...");
-  nbAccess.shutdown();
+void LiveObjectsBase::disconnect() {
+  disconnectMQTT();
+  disconnectNetwork();
   outputDebug("Offline.\n");
   networkStatus = DISCONNECTED;
 }
@@ -339,34 +256,33 @@ void LiveObjects::disconnect() {
    MQTT FUNCTIONS
  ******************************************************************************/
 
-void LiveObjects::onMQTTmessage(int messageSize) {
-  LiveObjects& lo = LiveObjects::get();
-  String topic = lo.mqttClient->messageTopic();
-  lo.outputDebug("Received a message on topic '");
-  lo.outputDebug(topic);
-  lo.outputDebug("':");
+void LiveObjectsBase::onMQTTmessage(int messageSize) {
+  String topic = m_pMqttclient->messageTopic();
+  outputDebug("Received a message on topic '");
+  outputDebug(topic);
+  outputDebug("':");
 
-  if (topic == lo.mqtt_subcfg)
-    lo.configurationManager(messageSize);
-  else if (topic == lo.mqtt_subcmd)
-    lo.commandManager();
+  if (topic == MQTT_SUBCFG)
+    configurationManager(messageSize);
+  else if (topic == MQTT_SUBCFG)
+    commandManager();
 }
 
-void LiveObjects::sendData() {
-  easyDataPayload[JSONmodel] = JSONmodelName;
-  publishMessage(mqtt_pubdata, easyDataPayload);
+void LiveObjectsBase::sendData() {
+  easyDataPayload[JSONMODEL] = JSONMODELNAME;
+  publishMessage(MQTT_PUBDATA, easyDataPayload);
   easyDataPayload.clear();
 }
 
-void LiveObjects::sendData(const String customPayload) {
+void LiveObjectsBase::sendData(const String customPayload) {
   StaticJsonDocument<PAYLOAD_DATA_SIZE> payload;
   deserializeJson(payload, customPayload);
-  if (!payload.containsKey(JSONmodel))
-    payload[JSONmodel] = JSONmodelName;
-  publishMessage(mqtt_pubdata, payload);
+  if (!payload.containsKey(JSONMODEL))
+    payload[JSONMODEL] = JSONMODELNAME;
+  publishMessage(MQTT_PUBDATA, payload);
 }
 
-void LiveObjects::publishMessage(const char* topic, JsonDocument& payload) {
+void LiveObjectsBase::publishMessage(const char* topic, JsonDocument& payload) {
   LiveObjects_networkStatus lastStatus = networkStatus;
   if (networkStatus != CONNECTED)
         connect();
@@ -378,9 +294,9 @@ void LiveObjects::publishMessage(const char* topic, JsonDocument& payload) {
   serializeJsonPretty(payload, Serial);
   outputDebug('\n');
 
-  mqttClient->beginMessage(topic);
-  serializeJson(payload, *mqttClient);
-  mqttClient->endMessage();
+  m_pMqttclient->beginMessage(topic);
+  serializeJson(payload, *m_pMqttclient);
+  m_pMqttclient->endMessage();
 
   if (lastStatus == DISCONNECTED)
         disconnect();
@@ -390,57 +306,310 @@ void LiveObjects::publishMessage(const char* topic, JsonDocument& payload) {
    LIVE OBJECTS
  ******************************************************************************/
 
-void LiveObjects::loop() {
+void LiveObjectsBase::loop() {
   if (networkStatus == CONNECTED) {
     networkCheck();
-    mqttClient->poll();
+    m_pMqttclient->poll();
   }
 }
-void LiveObjects::setProtocol(Protocol p)
+void LiveObjectsBase::setProtocol(Protocol p)
 {
 //TODO
 }
-void LiveObjects::setSecurity(Security s)
+void LiveObjectsBase::setSecurity(Security s)
 {
 //TODO
 }
-void LiveObjects::enableDebug(bool b)
+void LiveObjectsBase::enableDebug(bool b)
 {
   m_bDebug = b;
 }
-void LiveObjects::setClientID(const char* id)
+void LiveObjectsBase::setClientID(const char* id)
 {
-  memset(mqtt_id,'\0',MQTT_CLIENT_ID_LENGTH);
-  strcpy(mqtt_id,id);
+  m_sMqttid = id;
 }
-void LiveObjects::addTimestamp(time_t timestamp)
+void LiveObjectsBase::addTimestamp(time_t timestamp)
 {
   char buf[sizeof "2011-10-08T07:07:09Z"];
   strftime(buf, sizeof buf, "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
   easyDataPayload["timestamp"] = buf;
 }
-void LiveObjects::addLocation(double lat, double lon, float alt)
+void LiveObjectsBase::addLocation(double lat, double lon, float alt)
 {
-  JsonObject obj = easyDataPayload[JSONvalue].createNestedObject("position");
-  obj["latitude"] = lat;
-  obj["longitude"] = lon;
-  obj["altitude"]=alt;
-}
-void LiveObjects::addNetworkInfo()
-{
-  NBScanner scanner;
-  JsonObject obj = easyDataPayload[JSONvalue].createNestedObject("networkInfo");
-  obj["connection_status"] = nbAccess.status() == NB_NetworkStatus_t::NB_READY ? "connected":"disconnected";
-  obj["strength"] = scanner.getSignalStrength();
-  obj["carrier"]=scanner.getCurrentCarrier();
+  JsonObject obj = easyDataPayload.createNestedObject("location");
+  obj["lat"] = lat;
+  obj["lon"] = lon;
+  obj["alt"] = alt;
 }
 
-void LiveObjects::clearPayload()
+void LiveObjectsBase::clearPayload()
 {
   easyDataPayload.clear();
 }
 
-bool LiveObjects::debugEnabled()
+bool LiveObjectsBase::debugEnabled()
 {
   return m_bDebug;
 }
+
+void LiveObjectsBase::checkMQTT()
+{
+  if(!m_pMqttclient->connected())
+    connectMQTT();
+}
+void LiveObjectsBase::connectMQTT()
+{
+  if (sizeof(SECRET_LIVEOBJECTS_API_KEY) != 33) // check if API key seems correct
+  {
+    outputDebug("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.");
+    while (1) ;
+  }
+
+  if (!m_bInitialMqttConfig) {
+    m_pMqttclient->setId(m_sMqttid.c_str());
+    m_pMqttclient->setUsernamePassword(MQTT_USER, SECRET_LIVEOBJECTS_API_KEY);
+  }
+
+  outputDebug("Connecting to MQTT broker '");
+  outputDebug(MQTT_BROKER);
+  outputDebug(m_nPort);
+  outputDebug("'");
+
+
+  while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(".");
+  outputDebug("\nYou're connected to the MQTT broker");
+
+  networkStatus = CONNECTED;
+
+  if (paramNb > 0)
+    m_pMqttclient->subscribe(MQTT_SUBCFG);
+  if (cmdNb > 0)
+  m_pMqttclient->subscribe(MQTT_SUBCMD);
+
+  if (!m_bInitialMqttConfig) {
+    configurationManager();
+    m_bInitialMqttConfig = true;
+  }
+
+  m_pMqttclient->poll();
+}
+void LiveObjectsBase::disconnectMQTT()
+{
+  outputDebug("\nClosing MQTT connection...");
+  m_pMqttclient->stop();
+}
+
+
+
+
+
+
+
+
+
+ /******************************************************************************
+   GSM CLASS
+ ******************************************************************************/
+#ifdef ARDUINO_SAMD_MKRNB1500
+LiveObjectsGSM::LiveObjectsGSM()
+  :
+   LiveObjectsBase()
+  ,m_NBAcces()
+{}
+
+LiveObjectsGSM::~LiveObjectsGSM()
+{}
+
+void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
+{
+  m_bDebug = bDebug;
+  switch(s)
+  {
+    case TLS:
+    m_pClient = new NBSSLClient();
+    m_pMqttclient = new MqttClient(m_pClient);
+    m_nPort = 8883;
+    break;
+    case NONE:
+    m_pClient = new NBClient();
+    m_pMqttclient = new MqttClient(m_pClient);
+    m_nPort = 1883;
+    break;
+    default:
+    outputDebug("Wrong security type!");
+  }
+  m_bInitialized = true;
+  m_pMqttclient->onMessage(messageCallback);
+}
+
+void LiveObjectsGSM::connectNetwork()
+{
+  //Set client id as IMEI
+  if (!m_bInitialized)
+  {
+    NBModem modem;
+    if(modem.begin())
+    {
+      if(m_sMqttid[0]=='\0')
+      {
+        String imei="";
+        for(int i=1;i<=3;i++)
+        {
+          imei=modem.getIMEI();
+          if(imei.length()!=0) break;
+          delay(100*i);
+        }
+        m_sMqttid = imei;
+      }
+    }
+    else
+    {
+      outputDebug("Failed to initialize modem!");
+      while(true){}
+    }
+  }
+
+   outputDebug("Connecting to cellular network");
+   while (m_NBAcces.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
+     outputDebug(".");
+  outputDebug("\nYou're connected to the network");
+
+  if(m_nPort==8883){
+    if (!m_bCertLoaded) {
+      outputDebug("Loading DigiCert Root CA certificate");
+      MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
+      if (MODEM.waitForPrompt() != 1) {
+        outputDebug("Problem loading certificate!\nStopping here.");
+        while (1) ;
+      }
+      else {
+        MODEM.write(LO_ROOT_CERT.data, LO_ROOT_CERT.size);
+        int ready;
+        while (!MODEM.ready()) ;
+        m_bCertLoaded = true;
+        outputDebug("Certificate loaded");
+      }
+    }
+  }
+}
+
+void LiveObjectsGSM::checkNetwork()
+{
+  if(m_NBAcces.status()!= NB_READY)
+    connectNetwork();
+}
+
+void LiveObjectsGSM::disconnectNetwork()
+{
+  outputDebug("Disconnecting from cellular network...");
+  m_NBAcces.shutdown();
+}
+
+void LiveObjectsGSM::messageCallback(int msg)
+{
+  LiveObjects::get().onMQTTmessage(msg);
+};
+
+void LiveObjectsGSM::addNetworkInfo()
+{
+  NBScanner scanner;
+  JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
+  obj["connection_status"] = m_NBAcces.status() == NB_NetworkStatus_t::NB_READY ? "connected":"disconnected";
+  obj["strength"] = scanner.getSignalStrength();
+  obj["carrier"]=scanner.getCurrentCarrier();
+}
+
+#endif
+ /******************************************************************************
+   WiFi101 CLASS
+ ******************************************************************************/
+#ifdef ARDUINO_SAMD_MKRWIFI1010
+LiveObjectsWiFi101::LiveObjectsWiFi101()
+  :
+   LiveObjectsBase()
+   ,m_sSSID(SECRET_SSID)
+   ,m_sPassword(SECRET_WIFI_PASS)
+{}
+LiveObjectsWiFi101::~LiveObjectsWiFi101()
+{}
+
+
+
+void LiveObjectsWiFi101::begin(Protocol p, Security s, bool bDebug)
+{
+  m_bDebug = bDebug;
+  switch(s)
+  {
+    case TLS:
+    m_pClient = new WiFiSSLClient();
+    m_pMqttclient = new MqttClient(m_pClient);
+    m_nPort = 8883;
+    break;
+    case NONE:
+    m_pClient = new WiFiClient();
+    m_pMqttclient = new MqttClient(m_pClient);
+    m_nPort = 1883;
+    break;
+    default:
+    outputDebug("Wrong security type!");
+  }
+  m_bInitialized = true;
+  m_pMqttclient->onMessage(messageCallback);
+}
+
+void LiveObjectsWiFi101::connectNetwork()
+{
+  if (WiFi.status() == WL_NO_SHIELD) {
+    Serial.println("Communication with WiFi module failed!");
+    // stop as probably we can't help here
+    while (true);
+  }
+
+  outputDebug("WiFi firmware version ");
+  outputDebug(WiFi.firmwareVersion());
+
+  outputDebug("Attempting to connect to SSID: ");
+  outputDebug(m_sSSID);
+  outputDebug(" ");
+
+  while (WiFi.begin(m_sSSID.c_str(), m_sPassword.c_str()) != WL_CONNECTED) {
+    // failed, retry
+    outputDebug(".");
+    delay(3000);
+  }
+
+
+}
+void LiveObjectsWiFi101::checkNetwork()
+{
+  if(WiFi.status()== WL_DISCONNECTED)
+    connectNetwork();
+}
+void LiveObjectsWiFi101::disconnectNetwork()
+{
+  outputDebug("Disconnecting WiFi");
+  WiFi.disconnect();
+}
+void LiveObjectsWiFi101::messageCallback(int msg)
+{
+  LiveObjects::get().onMQTTmessage(msg);
+}
+
+void LiveObjectsWiFi101::addNetworkInfo()
+{
+  JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
+  IPAddress ip = WiFi.localIP();
+  obj["ssid"] = m_sSSID;
+  String addres;
+  for(int i=0;i<4;++i)
+  {
+    addres+=ip[i];
+    if(i!=3) addres+='.';
+  }
+  obj["ip"] = addres;
+  addres = WiFi.RSSI();
+  addres += " dbm";
+  obj["strength"] = addres;
+
+}
+#endif
