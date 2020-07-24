@@ -450,7 +450,7 @@ void LiveObjectsGSM::connectNetwork()
     NBModem modem;
     if(modem.begin())
     {
-      if(m_sMqttid[0]=='\0')
+      if(m_sMqttid.length()==0)
       {
         String imei="";
         for(int i=1;i<=3;i++)
