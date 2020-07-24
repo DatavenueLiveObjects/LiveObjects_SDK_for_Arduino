@@ -445,7 +445,7 @@ void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
 void LiveObjectsGSM::connectNetwork()
 {
   //Set client id as IMEI
-  if (!m_bInitialized)
+  if (m_bInitialized)
   {
     NBModem modem;
     if(modem.begin())
@@ -467,6 +467,10 @@ void LiveObjectsGSM::connectNetwork()
       outputDebug("Failed to initialize modem!");
       while(true){}
     }
+  }else
+  {
+    Serial.println("lo.begin() function should be called before calling lo.connect(), stopping!");
+    while(true){}
   }
 
    outputDebug("Connecting to cellular network");
