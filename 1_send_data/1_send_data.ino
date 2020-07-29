@@ -5,7 +5,7 @@
 /******************************************************************************
    USER VARIABLES
  ******************************************************************************/
-uint32_t messageRate = 60000;   // stores the current data message rate in Milliseconds
+uint32_t messageRate = 5000;   // stores the current data message rate in Milliseconds
 unsigned long uptime;   // stores the device uptime (sent as fake sensor data)
 unsigned long lastMessageTime = 0;   // stores the time when last data message was sent
 

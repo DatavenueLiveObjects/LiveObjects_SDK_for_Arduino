@@ -1,20 +1,6 @@
 /******************************************************************************
-   DEFAULT VALUES
- ******************************************************************************/
-
-// Set MQTT security:
-// comment the line to disable security (MQTT),
-// uncomment to activate TLS security (MQTTS).
-#define MQTT_TLS
-
-/******************************************************************************
    INCLUDES
  ******************************************************************************/
-
-#include <MKRNB.h>
-#include <ArduinoMqttClient.h>
-#include <ArduinoJson.h>
-#include "arduino_secrets.h"
 #include "LiveObjects.h"
 
 /******************************************************************************
@@ -50,9 +36,9 @@ void setup() {
   Serial.println("***");
 
   // Declaring a simple commands hadled by the function 'blinkLED5times'.
-  addCommand("blink", blinkLED5times);
-
-  LiveObjects_connect();                          // connects to the network + Live Objects
+  lo.addCommand("blink", blinkLED5times);
+  lo.begin(MQTT, TLS, true);
+  lo.connect();                          // connects to the network + Live Objects
 }
 
 void loop() {
@@ -60,12 +46,12 @@ void loop() {
     // collect data periodically
     Serial.println("Sampling data");
     uptime = millis();
-    addToPayload("uptime", uptime);               // adding 'uptime' value to the current payload
+    lo.addToPayload("uptime", uptime);               // adding 'uptime' value to the current payload
 
     Serial.println("Sending data to Live Objects");
-    sendData();                                   // send the data to Live Objects
+    lo.sendData();                                   // send the data to Live Objects
     lastMessageTime = millis();
   }
 
-  LiveObjects_loop();                             // don't forget to keep this in your main loop
+  lo.loop();                             // don't forget to keep this in your main loop
 }
