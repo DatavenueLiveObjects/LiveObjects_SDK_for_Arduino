@@ -12,14 +12,13 @@ unsigned long lastMessageTime = 0;   // stores the time when last data message w
 /******************************************************************************
    USER PROGRAM
  ******************************************************************************/
-
 void setup() {
   Serial.begin(115200);
   Serial.print("\n*** Live Objects for Arduino MKR boards, revision ");
   Serial.print(SW_REVISION);
   Serial.println("***");
   lo.begin(MQTT, TLS, true);
-  lo.connect();                          // connects to the network + Live Objects
+  lo.connect(); // connects to the network + Live Objects
 }
 
 void loop() {

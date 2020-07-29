@@ -51,7 +51,7 @@ void blinkLED(const String arguments, String &response) {
 
 void setup() {
   Serial.begin(115200);
-  Serial.print("\n*** Live Objects on Arduino MKR NB 1500, revision ");
+  Serial.print("\n*** Live Objects on Arduino MKR boards, revision ");
   Serial.print(SW_REVISION);
   Serial.println("***");
 

@@ -20,7 +20,7 @@ unsigned long lastMessageTime = 0;   // stores the time when last data message w
 
 void setup() {
   Serial.begin(115200);
-  Serial.print("\n*** Live Objects on Arduino MKR NB 1500, revision ");
+  Serial.print("\n*** Live Objects on Arduino MKR NB boards, revision ");
   Serial.print(SW_REVISION);
   Serial.println("***");
 

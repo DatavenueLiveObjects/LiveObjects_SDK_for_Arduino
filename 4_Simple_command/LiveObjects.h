@@ -1,10 +1,10 @@
 #pragma once
+//#define ARDUINO_SAMD_MKRWIFI1010
 /******************************************************************************
-   DEFAULT VALUES
+   DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
 #define PARAMETERS_NB_MAX 10
-#define COMMANDS_NB_MAX 10
-#define PAYLOAD_DEVMGT_SIZE 256
+#define PAYLOAD_DEVMGT_SIZE 1024
 #define PAYLOAD_DATA_SIZE 512
 #define KEEP_ALIVE_NETWORK 10000
 #define SW_REVISION "1.8.0"
@@ -27,11 +27,12 @@
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
-#include <ArduinoMqttClient.h>
+#include "ArduinoMqttClient.h"
 #include <ArduinoJson.h>
 #include <ctime>
 #include "arduino_secrets.h"
 #include "LiveObjectsCert.h"
+#include "Utils.h"
 
 /******************************************************************************
    TYPEDEFS/ENUMS
@@ -100,15 +101,25 @@ protected:
 public:
     struct LiveObjects_parameter
     {
-        const char* label;
-        void *value;
-        LiveObjects_parameterType type;
-        LiveObjects_variableType variableType;
-        onParameterUpdateCallback callback;
+      LiveObjects_parameter(String name, void *variable, LiveObjects_parameterType t, LiveObjects_variableType vt, onParameterUpdateCallback c)
+      :
+        label(name)
+       ,value(variable)
+       ,type(t)
+       ,variableType(vt)
+       ,callback(c){}
+
+      bool operator==(const LiveObjects_parameter& p){ return label == p.label; }
+      String label;
+      LiveObjects_parameterType type;
+      LiveObjects_variableType variableType;
+      onParameterUpdateCallback callback;
+      void *value;
     };
     struct LiveObjects_command
     {
-        const char* label;
+      LiveObjects_command(String l, onCommandCallback c): label(l), callback(c){}
+        String label;
         onCommandCallback callback;
     };
 
@@ -120,7 +131,7 @@ public:
   void setProtocol(Protocol p);
   void setSecurity(Security s);
   void enableDebug(bool b);
-  void setClientID(const char* id);
+  void setClientID(const String id);
 
 public:
   bool debugEnabled();
@@ -132,14 +143,14 @@ public:
   void clearPayload();
 
 public:
-  void publishMessage(const char* topic, JsonDocument& payload);
+  void addCommand(const String name, onCommandCallback callback);
+  void publishMessage(const String& topic, JsonDocument& payload);
   void connect();
   void networkCheck();
   void disconnect();
   void onMQTTmessage(int messageSize);
   void sendData();
   void sendData(const String customPayload);
-  void addCommand(const char* name, onCommandCallback callback);
   void loop();
 
 protected:
@@ -172,15 +183,15 @@ public:
    TEMPLATE FUNCTIONS
 ******************************************************************************/
     template<typename LOtA>
-    void addParameter(const char* name, LOtA &variable);
+    void addParameter(const String name, LOtA &variable);
     template<typename LOtB>
-    void addParameter(const char* name, LOtB &variable, LiveObjects_parameterType type);
+    void addParameter(const String name, LOtB &variable, LiveObjects_parameterType type);
     template<typename LOtC>
-    void addParameter(const char* name, LOtC &variable, onParameterUpdateCallback callback);
+    void addParameter(const String name, LOtC &variable, onParameterUpdateCallback callback);
     template<typename LOtD>
-    void addParameter(const char* name, LOtD &variable, onParameterUpdateCallback callback, LiveObjects_parameterType type);
+    void addParameter(const String name, LOtD &variable, onParameterUpdateCallback callback, LiveObjects_parameterType type);
     template<typename LOtE>
-    void addTypedParam(const char* name, LOtE *variable, LiveObjects_parameterType type, LiveObjects_variableType variableType, onParameterUpdateCallback callback);
+    void addTypedParam(const String name, LOtE *variable, LiveObjects_parameterType type, LiveObjects_variableType variableType, onParameterUpdateCallback callback);
     template<typename LOtF>
     void updateParameter(const LiveObjects_parameter param, LOtF* ptr, const JsonDocument& configIn, JsonDocument& configOut);
     template<typename LOtH>
@@ -189,16 +200,14 @@ public:
    OBJECTS
 ******************************************************************************/
 protected:
-    LiveObjects_command commands[COMMANDS_NB_MAX];
-    LiveObjects_parameter parameters[PARAMETERS_NB_MAX];
+    LinkedList<LiveObjects_command> commands;
+    LinkedList<LiveObjects_parameter> parameters;
     LiveObjects_networkStatus networkStatus = DISCONNECTED;
     StaticJsonDocument<PAYLOAD_DATA_SIZE> easyDataPayload;
 /******************************************************************************
    VARIABLES
 ******************************************************************************/
 private:
-    uint8_t paramNb =  0;
-    uint8_t cmdNb  = 0;
     unsigned long lastKeepAliveMQTT =  0;
     unsigned long lastKeepAliveNetwork  = 0;
 
@@ -214,19 +223,19 @@ protected:
 /******************************************************************************
    PARAM TYPERS
  ******************************************************************************/
-    void paramTyper(const char* name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, double* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, float* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const char* name, String* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, double* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, float* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, String* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
 
 /******************************************************************************
    POINTER TYPER
@@ -235,27 +244,27 @@ protected:
 };
 
 template<typename LOtA>
-inline void LiveObjectsBase::addParameter(const char* name, LOtA &variable) {
-  onParameterUpdateCallback ptr = NULL;
+inline void LiveObjectsBase::addParameter(const String name, LOtA &variable) {
+  onParameterUpdateCallback ptr = nullptr;
   paramTyper(name, &variable, IMPLICIT, ptr);
 }
 template<typename LOtB>
-inline void LiveObjectsBase::addParameter(const char* name, LOtB &variable, LiveObjects_parameterType type) {
+inline void LiveObjectsBase::addParameter(const String name, LOtB &variable, LiveObjects_parameterType type) {
   onParameterUpdateCallback ptr = NULL;
   paramTyper(name, &variable, type, ptr);
 }
 template<typename LOtC>
-inline void LiveObjectsBase::addParameter(const char* name, LOtC &variable, onParameterUpdateCallback callback) {
+inline void LiveObjectsBase::addParameter(const String name, LOtC &variable, onParameterUpdateCallback callback) {
   paramTyper(name, &variable, IMPLICIT, callback);
 }
 template<typename LOtD>
-inline void LiveObjectsBase::addParameter(const char* name, LOtD &variable, onParameterUpdateCallback callback, LiveObjects_parameterType type) {
+inline void LiveObjectsBase::addParameter(const String name, LOtD &variable, onParameterUpdateCallback callback, LiveObjects_parameterType type) {
   paramTyper(name, &variable, type, callback);
 }
 
 template<typename LOtE>
-inline void LiveObjectsBase::addTypedParam(const char* name, LOtE *variable, LiveObjects_parameterType type, LiveObjects_variableType variableType, onParameterUpdateCallback callback) {
-  parameters[paramNb++] = (LiveObjects_parameter) { name, variable, type, variableType, callback };
+inline void LiveObjectsBase::addTypedParam(const String name, LOtE *variable, LiveObjects_parameterType type, LiveObjects_variableType variableType, onParameterUpdateCallback callback) {
+  parameters.push(new LiveObjects_parameter(name, variable, type, variableType, callback));
 }
 
 template<typename LOtF>
@@ -297,7 +306,7 @@ class LiveObjectsGSM : public LiveObjectsBase
     LiveObjectsGSM(const LiveObjectsGSM&)  = delete;
     LiveObjectsGSM& operator== (const LiveObjectsGSM&) =  delete;
   public:
-    void begin(Protocol p, Security s, bool bDebug) override;
+    void begin(Protocol p=MQTT, Security s=TLS, bool bDebug=true) override;
     void addNetworkInfo() override;
 
   private:
@@ -307,6 +316,7 @@ class LiveObjectsGSM : public LiveObjectsBase
     static void messageCallback(int msg);
   private:
   NB m_NBAcces;
+  NBScanner m_NBScanner;
 };
 
 typedef LiveObjectsGSM LiveObjects;
@@ -315,23 +325,30 @@ typedef LiveObjectsGSM LiveObjects;
 /******************************************************************************
   WIFI BOARDS CLASS
 ******************************************************************************/
-#ifdef ARDUINO_SAMD_MKRWIFI1010
+#if defined ARDUINO_SAMD_MKRWIFI1010 || ARDUINO_SAMD_NANO_33_IOT
 #include <WiFiNINA.h>
-class LiveObjectsWiFi101 : public LiveObjectsBase
+#define WIFI
+#endif
+#ifdef ARDUINO_SAMD_MKRWIFI1000
+#include <WiFi101.h>
+#define WIFI
+#endif
+#ifdef WIFI
+class LiveObjectsWiFi : public LiveObjectsBase
 {
   public:
-    static LiveObjectsWiFi101& get()
+    static LiveObjectsWiFi& get()
     {
-      static LiveObjectsWiFi101 w; return w;
+      static LiveObjectsWiFi w; return w;
     }
 
   private:
-    LiveObjectsWiFi101();
-    ~LiveObjectsWiFi101();
-    LiveObjectsWiFi101(const LiveObjectsWiFi101&)  = delete;
-    LiveObjectsWiFi101& operator== (const LiveObjectsWiFi101&) =  delete;
+    LiveObjectsWiFi();
+    ~LiveObjectsWiFi();
+    LiveObjectsWiFi(const LiveObjectsWiFi&)  = delete;
+    LiveObjectsWiFi& operator== (const LiveObjectsWiFi&) =  delete;
   public:
-    void begin(Protocol p, Security s, bool bDebug) override;
+    void begin(Protocol p=MQTT, Security s=TLS, bool bDebug=true) override;
     void addNetworkInfo() override;
   private:
     void connectNetwork() override;
@@ -339,10 +356,9 @@ class LiveObjectsWiFi101 : public LiveObjectsBase
     void disconnectNetwork() override;
     static void messageCallback(int msg);
   private:
-  String m_sSSID;
-  String m_sPassword;
+  String m_sMac;
 };
-typedef LiveObjectsWiFi101 LiveObjects;
+typedef LiveObjectsWiFi LiveObjects;
 #endif
 
 #ifndef DO_NOT_DEFINE_LO
