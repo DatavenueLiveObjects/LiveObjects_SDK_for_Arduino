@@ -25,22 +25,8 @@ This code needs 3 external libraries to run, that you can install using the buil
 3. Create an [API key](https://liveobjects.orange-business.com/#/administration/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
 4. In the **'arduino_secrets.h'** file:
    - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
-   - Fill in the cellular credentials if needed (pin code, APN information, etc). Most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
-5. In the [Arduino_MKR1500NB.ino](./Arduino_MKR1500NB.ino) sketch, you can choose whether or not using TLS security with the MQTT protocol:
-```c++
-  // Set MQTT security:
-  // comment the line to disable security (MQTT),
-  // uncomment to activate TLS security (MQTTS).
-#define MQTT_TLS
-```
-You can also adjust the default message rate of 60s:
-```c++
-  // Set the default message transmission rate (in seconds).
-  // This parameter can be updated later over the air from Live Objects.
-#define DEFAULT_MESSAGE_RATE 60
-```
+   - Fill in the connection(WIFI or GSM) credentials if needed (pin code, APN information, etc). In case of GSM connection, most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
 
-This rate can be later adjusted over the air by modifying the parameter directly on Live Objects (see [user guide](https://liveobjects.orange-business.com/cms/app/uploads/EN_User-guide-Live-Objects-7.pdf#%5B%7B%22num%22%3A115%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C68%2C355%2C0%5D), §2.4.8.4).
 
 ## Developer guide ##
 
@@ -55,10 +41,10 @@ You can declare parameters with the `addParameter()` instruction, which accepts 
 ```c++
 int myParam;
 ...
-addParameter("my parameter", myParam);
-addParameter("a second parameter", 2ndParam, myCallbackFunction);
-addParameter("a third parameter", 3rdParam, STRING);
-addParameter("another parameter", anotherParam, anotherCallbackFunction, UNSIGNED_INTEGER);
+lo.addParameter("my parameter", myParam);
+lo.addParameter("a second parameter", 2ndParam, myCallbackFunction);
+lo.addParameter("a third parameter", 3rdParam, STRING);
+lo.addParameter("another parameter", anotherParam, anotherCallbackFunction, UNSIGNED_INTEGER);
 ```
 
 The callback function does not take any arguments. It is of form
@@ -77,7 +63,7 @@ Commands can be declared using the `addcommand()` instruction, which accepts the
 - the label of your command (_const char*_ expected);
 - the callback function that will execute the command.
 ```c++
-addParameter("a command", myCallback);
+lo.addParameter("a command", myCallback);
 ```
 
 The callback function is of form
@@ -98,7 +84,7 @@ void playTone(const String arguments, String &response) {
 }
 
 void setup() {
-  addParameter("play tone", playTone);
+  lo.addParameter("play tone", playTone);
 }
 ```
 
@@ -122,9 +108,9 @@ double myOtherValue;
 
 void loop() {
   // collect data
-  addToPayload("my data", value);
-  addToPayload("my other data", myOtherValue);
-  sendData();
+  lo.addToPayload("my data", value);
+  lo.addToPayload("my other data", myOtherValue);
+  lo.sendData();
 }
 ```
 
@@ -135,11 +121,11 @@ Advanced users may want to add more specific fields to their payload, like geolo
 ```c++
 void loop() {
   String myPayloadString = "{\"value\":{\"uptime\":0, \"conditions\":\"good\"}}"
-  sendData(myPayloadString);
-  
+  lo.sendData(myPayloadString);
+
   // or
   char* myPayloadCharArray = "{\"value\":{\"uptime\":0, \"conditions\":\"good\"}}"
-  sendData(myPayloadCharArray);
+  lo.sendData(myPayloadCharArray);
 }
 ```
 
