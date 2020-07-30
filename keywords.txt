@@ -1,0 +1,34 @@
+#######################################
+# Syntax Coloring Map
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+lo	KEYWORD1
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+setProtocol	KEYWORD2
+setSecurity	KEYWORD2
+enableDebug	KEYWORD2
+setClientID	KEYWORD2
+debugEnabled	KEYWORD2
+addTimestamp	KEYWORD2
+addLocation	KEYWORD2
+addNetworkInfo	KEYWORD2
+clearPayload	KEYWORD2
+addCommand	KEYWORD2
+publishMessage	KEYWORD2
+connect		KEYWORD2
+networkCheck	KEYWORD2
+disconnect	KEYWORD2
+onMQTTmessage	KEYWORD2
+sendData	KEYWORD2
+loop		KEYWORD2
+begin		KEYWORD2
+
+
+######################################
+# Constants (LITERAL1)
+######################################
