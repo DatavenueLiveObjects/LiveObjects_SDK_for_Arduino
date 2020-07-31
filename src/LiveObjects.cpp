@@ -1,4 +1,3 @@
-#define DO_NOT_DEFINE_LO
 #include "LiveObjects.h"
 
 
@@ -10,10 +9,12 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_bCertLoaded(false)
     ,m_pClient(nullptr)
     ,m_pMqttclient(nullptr)
+    ,m_pWire(nullptr)
 {
 }
 LiveObjectsBase::~LiveObjectsBase()
 {
+  m_pWire->end();
   delete m_pMqttclient;
   delete m_pClient;
 }
@@ -160,9 +161,11 @@ void LiveObjectsBase::configurationManager(int messageSize) {
     StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configIn;
     deserializeJson(configIn, *m_pMqttclient);
 
+    if(m_bDebug)
+    {
     serializeJsonPretty(configIn, Serial);
-    outputDebug('\n');
-
+    Serial.println("");
+    }
     configOut=configIn;
     JsonObject obj =  configOut[JSONCFG];
     LiveObjects_parameter tmp("",nullptr,BINARY,T_BOOL,nullptr);
@@ -224,8 +227,11 @@ void LiveObjectsBase::commandManager() {
   StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdOut;
   deserializeJson(cmdIn, *m_pMqttclient);
 
+  if(m_bDebug)
+  {
   serializeJsonPretty(cmdIn, Serial);
-  outputDebug('\n');
+  Serial.println("");
+  }
   for (uint8_t i = 0; i < commands.size(); i++) // only with MQTT or SMS !!
     if (cmdIn[F("req")] == commands[i]->label) {
       cmdOut[JSONCID] = cmdIn[JSONCID];
@@ -260,7 +266,7 @@ void LiveObjectsBase::networkCheck() {
 void LiveObjectsBase::disconnect() {
   disconnectMQTT();
   disconnectNetwork();
-  outputDebug("Offline.\n");
+  outputDebug("Offline.");
   networkStatus = DISCONNECTED;
 }
 
@@ -270,7 +276,7 @@ void LiveObjectsBase::disconnect() {
 
 void LiveObjectsBase::onMQTTmessage(int messageSize) {
   String topic = m_pMqttclient->messageTopic();
-  outputDebug("Received a message on topic '");
+  outputDebug("Received a message on topic: ");
   outputDebug(topic);
 
   if (topic == MQTT_SUBCFG)
@@ -294,13 +300,16 @@ void LiveObjectsBase::sendData(const String customPayload) {
 }
 
 void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload) {
-  outputDebug("Publishing message");
+  outputDebug("Publishing message on topic");
   outputDebug(topic);
+  if(m_bDebug)
+  {
   serializeJsonPretty(payload, Serial);
-
+  Serial.println("");
+  }
   if( measureJson(payload) >= PAYLOAD_DATA_SIZE )
   {
-    outputDebug("Message size is to big, aborting send command.");
+    outputDebug("Message size is to big, aborting send command.", ERROR);
     return;
   }
 
@@ -369,7 +378,7 @@ void LiveObjectsBase::connectMQTT()
 {
   if (sizeof(SECRET_LIVEOBJECTS_API_KEY) != 33) // check if API key seems correct
   {
-    outputDebug("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.");
+    outputDebug("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.", ERROR);
     while (1) ;
   }
 
@@ -379,13 +388,13 @@ void LiveObjectsBase::connectMQTT()
     m_pMqttclient->setUsernamePassword(MQTT_USER, SECRET_LIVEOBJECTS_API_KEY);
   }
 
-  outputDebug("Connecting to MQTT broker '");
+  outputDebug("Connecting to MQTT broker");
   outputDebug(MQTT_BROKER);
   outputDebug(m_nPort);
 
 
   while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(".");
-  outputDebug("\nYou're connected to the MQTT broker");
+  outputDebug("You're connected to the MQTT broker");
 
   networkStatus = CONNECTED;
   m_pMqttclient->subscribe(MQTT_SUBCFG);
@@ -406,6 +415,32 @@ void LiveObjectsBase::disconnectMQTT()
 }
 
 
+int LiveObjectsBase::readRegister(byte address) {
+    m_pWire->beginTransmission(PMIC_ADDRESS);
+    m_pWire->write(address);
+
+    if (m_pWire->endTransmission(true) != 0) {
+      return -1;
+    }
+
+    if (m_pWire->requestFrom(PMIC_ADDRESS, 1, true) != 1) {
+      return -1;
+    }
+
+    return m_pWire->read();
+}
+
+void LiveObjectsBase::addPowerStatus()
+{
+  JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("powerStatus");
+  int DATA = readRegister(SYSTEM_STATUS_REGISTER);
+  bool bat = (DATA & (1<<4)) == 0x08;
+  bool usb = (DATA & ((1<<6)||(1<<7))) != 0;
+  bool power = (DATA & (1<<2)) == 0x04;
+  obj["external_power"] =  usb ? "Yes" : !bat && power ? "Yes" : "No";
+  obj["battery_connected"] = bat ? "Yes" : "No";
+  obj["battery_voltage"] = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
+}
 
 
 
@@ -442,7 +477,8 @@ void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
     m_nPort = 1883;
     break;
     default:
-    outputDebug("Wrong security type!");
+    outputDebug("Wrong security type! stopping...", ERROR);
+    while(true);
   }
   m_bInitialized = true;
   m_pMqttclient->onMessage(messageCallback);
@@ -453,7 +489,7 @@ void LiveObjectsGSM::connectNetwork()
   //Set client id as IMEI
   if (!m_bInitialized)
   {
-    outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
+    outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true",WARNING);
     begin();
   }
 
@@ -474,21 +510,21 @@ void LiveObjectsGSM::connectNetwork()
   }
   else
   {
-    outputDebug("Failed to initialize modem!");
-    while(true){}
+    outputDebug("Failed to initialize modem!",ERROR );
+    while(true);
   }
 
    outputDebug("Connecting to cellular network");
    while (m_NBAcces.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
      outputDebug(".");
-  outputDebug("\nYou're connected to the network");
+  outputDebug("You're connected to the network");
 
   if(m_nPort==8883){
     if (!m_bCertLoaded) {
       outputDebug("Loading DigiCert Root CA certificate");
       MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
       if (MODEM.waitForPrompt() != 1) {
-        outputDebug("Problem loading certificate!\nStopping here.");
+        outputDebug("Problem loading certificate!\nStopping here.",ERROR);
         while (1) ;
       }
       else {
@@ -536,6 +572,7 @@ LiveObjectsWiFi::LiveObjectsWiFi()
   :
    LiveObjectsBase()
    ,m_sMac()
+   ,m_sIP()
 {
 }
 LiveObjectsWiFi::~LiveObjectsWiFi()
@@ -559,10 +596,27 @@ void LiveObjectsWiFi::begin(Protocol p, Security s, bool bDebug)
     m_nPort = 1883;
     break;
     default:
-    outputDebug("Wrong security type! Stopping...");
+    outputDebug("Wrong security type! Stopping...", ERROR);
     while(true);
   }
 
+  m_pWire = &Wire;
+  m_pWire->begin();
+
+#ifdef ARDUINO_ARCH_SAMD
+    pinMode(PIN_USB_HOST_ENABLE, OUTPUT);
+    digitalWrite(PIN_USB_HOST_ENABLE, LOW);
+    #if defined(ARDUINO_SAMD_MKRGSM1400) || defined(ARDUINO_SAMD_MKRNB1500)
+      pinMode(PMIC_IRQ_PIN, INPUT_PULLUP);
+    #endif
+#endif
+
+    //check PMIC version
+  if (readRegister(PMIC_VERSION_REGISTER) != 0x23) {
+      outputDebug("PMIC NOT COMPATIBLE STOPPING",ERROR);
+      while(true);
+  }
+  
   uint8_t mac[6];
   char buff[10];
   WiFi.macAddress(mac);
@@ -582,28 +636,37 @@ void LiveObjectsWiFi::connectNetwork()
 {
   if(!m_bInitialized)
   {
-    outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
+    outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true", WARNING);
     begin();
   }
   if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("Communication with WiFi module failed!");
+    Serial.println("Communication with WiFi module failed! Stopping here...");
     // don't continue
     while (true);
   }
 
+  if(String(SECRET_SSID).length()<1)
+  {
+    outputDebug("SECRET_SSID is empty, check arduino_secrets.h, Stopping here...", ERROR);
+    while(true);
+  }
   outputDebug("WiFi firmware version ");
   outputDebug(WiFi.firmwareVersion());
 
   outputDebug("Attempting to connect to SSID: ");
   outputDebug(SECRET_SSID);
-  outputDebug(" ");
 
   while (WiFi.begin(SECRET_SSID, SECRET_WIFI_PASS) != WL_CONNECTED) {
     // failed, retry
     outputDebug(".");
-    delay(3000);
+    delay(1000);
   }
-
+  IPAddress ip = WiFi.localIP();
+  for(int i=0;i<4;++i)
+  {
+    m_sIP+=ip[i];
+    if(i!=3) m_sIP+='.';
+  }
 
 }
 void LiveObjectsWiFi::checkNetwork()
@@ -624,19 +687,15 @@ void LiveObjectsWiFi::messageCallback(int msg)
 void LiveObjectsWiFi::addNetworkInfo()
 {
   JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
-  IPAddress ip = WiFi.localIP();
   obj["mac"] = m_sMac;
   obj["ssid"] = SECRET_SSID;
-  String addres;
-  for(int i=0;i<4;++i)
-  {
-    addres+=ip[i];
-    if(i!=3) addres+='.';
-  }
-  obj["ip"] = addres;
-  addres = WiFi.RSSI();
-  addres += " dbm";
-  obj["strength"] = addres;
+  obj["ip"] = m_sIP;
+  String tmp;
+  tmp = WiFi.RSSI();
+  tmp += " dbm";
+  obj["strength"] = tmp;
 
 }
 #endif
+
+LiveObjects& lo = LiveObjects::get();

@@ -1,5 +1,4 @@
 #pragma once
-//#define ARDUINO_SAMD_MKRWIFI1010
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
@@ -9,6 +8,16 @@
 #define KEEP_ALIVE_NETWORK 10000
 #define SW_REVISION "1.8.0"
 
+/******************************************************************************
+   PMIC constants
+ ******************************************************************************/
+#define PMIC_ADDRESS 0x6B
+#define SYSTEM_STATUS_REGISTER 0x08
+#define PMIC_VERSION_REGISTER 0x0A
+
+/******************************************************************************
+   LiveObjects MQTT constants
+ ******************************************************************************/
 #define MQTT_BROKER "liveobjects.orange-business.com"
 #define MQTT_USER "json+device"
 #define MQTT_PUBDATA "dev/data"
@@ -17,6 +26,9 @@
 #define MQTT_SUBCMD "dev/cmd"
 #define MQTT_PUBCMD "dev/cmd/res"
 
+/******************************************************************************
+   JSON payload constants
+ ******************************************************************************/
 #define JSONCID "cid"
 #define JSONCFG "cfg"
 #define JSONCFGVALUE "v"
@@ -30,6 +42,7 @@
 #include "ArduinoMqttClient.h"
 #include <ArduinoJson.h>
 #include <ctime>
+#include <Wire.h>
 #include "arduino_secrets.h"
 #include "LiveObjectsCert.h"
 #include "Utils.h"
@@ -37,6 +50,13 @@
 /******************************************************************************
    TYPEDEFS/ENUMS
  ******************************************************************************/
+
+enum MSGTYPE
+{
+  INFO,
+  WARNING,
+  ERROR
+};
 
 enum LiveObjects_networkStatus
 {
@@ -107,7 +127,8 @@ public:
        ,value(variable)
        ,type(t)
        ,variableType(vt)
-       ,callback(c){}
+       ,callback(c)
+      {}
 
       bool operator==(const LiveObjects_parameter& p){ return label == p.label; }
       String label;
@@ -139,6 +160,7 @@ public:
 public:
   void addTimestamp(time_t timestamp);
   void addLocation(double lat, double lon, float alt);
+  void addPowerStatus();
   virtual void addNetworkInfo()=0;
   void clearPayload();
 
@@ -161,7 +183,8 @@ protected:
 
 protected:
   template<typename T>
-  void outputDebug(T buf);
+  void outputDebug(T buf, MSGTYPE type=INFO);
+  int readRegister(byte address);
 
 private:
   void checkMQTT();
@@ -214,6 +237,7 @@ private:
 protected:
     Client* m_pClient;
     MqttClient *m_pMqttclient;
+    TwoWire* m_pWire;
     String m_sMqttid;
     uint16_t m_nPort;
     bool m_bInitialMqttConfig;
@@ -280,9 +304,29 @@ inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
 }
 
 template<typename T>
-inline void LiveObjectsBase::outputDebug(T buf)
+inline void LiveObjectsBase::outputDebug(T buf, MSGTYPE type)
 {
-  if(m_bDebug) Serial.println(buf);
+  switch(type)
+  {
+    case INFO:
+      if(m_bDebug)
+      {
+        Serial.print("[INFO] ");
+        Serial.println(buf);
+      }
+      break;
+    case WARNING:
+      if(m_bDebug)
+      {
+        Serial.print("[WARNING] ");
+        Serial.println(buf);
+      }
+      break;
+    case ERROR:
+      Serial.print("[ERROR] ");
+      Serial.println(buf);
+      break;
+  }
 }
 
 
@@ -357,10 +401,9 @@ class LiveObjectsWiFi : public LiveObjectsBase
     static void messageCallback(int msg);
   private:
   String m_sMac;
+  String m_sIP;
 };
 typedef LiveObjectsWiFi LiveObjects;
 #endif
 
-#ifndef DO_NOT_DEFINE_LO
-extern LiveObjects& lo =  LiveObjects::get();
-#endif
+extern LiveObjects& lo;
