@@ -1,16 +1,30 @@
-# Prototype LTE-M with Orange using Live Objects and Arduino MKR NB 1500
+# Prototype with Orange using Live Objects and Arduino MKR Boards
 
-### Discover the LTE-M cellular network, dedicated to IoT, using [**Live Objects**](https://liveobjects.orange-business.com) and [**Arduino MKR NB 1500**](https://store.arduino.cc/mkr-nb-1500).
+### Discover Orange  [**Live Objects**](https://liveobjects.orange-business.com) using dedicated SDK for [**Arduino MKR family boards**](https://store.arduino.cc/arduino-genuino/arduino-genuino-mkr-family).
 
-This example of code wraps all the functions necessary to make your object work with Live Objects. You can declare parameters, which you can later update OTA from Live objects. You can also create commands to trigger actions remotely.
-The code will manage the MQTT exchanges with Live objects under the hood, and keep your parameters up to date or execute the commands received without you having to take care of them (apart from writing the code of these commands, of course).
+This code wraps all the functions necessary to make your object work with Live Objects.
 
-## Installation ##
-This code needs 3 external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
+ You can declare parameters, which you can later update OTA from Live objects. You can also create commands to trigger actions remotely.
+The code will manage the LTE-M, GSM and WiFi connection(depending on currently used board), as well MQTT exchanges with Live objects under the hood to keep your parameters up to date or execute the commands received without you having to take care of them (apart from writing the code of these commands, of course).
+
+## Compatibility ##
+| Board | MQTT | MQTTS |
+| :--- | :---: | :---: |
+| Arduino MKR1000 WIFI | OK | - |
+| Arduino MKR 1010 WiFi | OK | OK |
+| Arduino MKR 1400 GSM | OK | OK |
+| Arduino MKR 1500 NB | OK | OK |
+| Arduino MKR VIDOR 4000 | OK | OK* |
+| Arduino Nano 33 IoT | OK | OK |
+
+## Prerequisites/dependecies ##
+This code needs 2 ~~3~~ external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
 
 #### Libraries provided by Arduino
 - [MKRNB](https://www.arduino.cc/en/Reference/MKRNB) in order to handle the LTE-M module on **Arduino MKR NB 1500**
-- [ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino
+- ~~[ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino~~ *
+
+ \* currently integrated into this SDK, until https://github.com/arduino-libraries/ArduinoMqttClient/pull/44 fix will be merged
 
 #### Library developed by Benoît Blanchon
 - [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily
@@ -20,12 +34,13 @@ This code needs 3 external libraries to run, that you can install using the buil
 
 ## How to use ##
 
-1. Clone or download the directory from Github.
-2. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one.
-3. Create an [API key](https://liveobjects.orange-business.com/#/administration/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
-4. In the **'arduino_secrets.h'** file:
+1. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one.
+2. Create an [API key](https://liveobjects.orange-business.com/#/administration/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
+3. Clone or download the directory from Github.
+4. In the **'src/arduino_secrets.h'** file :
    - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
    - Fill in the connection(WIFI or GSM) credentials if needed (pin code, APN information, etc). In case of GSM connection, most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
+5. Import library into the Arduino IDE, to do this select: *Sketch-> Include Library-> Add .ZIP Library* and select folder which you cloned in the previous step(actually it doesn't need to be .ZIP-ed to be imported). After successful import you should see example sketches in *File->Examples->LiveObjectsSDK*
 
 
 ## Developer guide ##
