@@ -4,7 +4,7 @@ jobs:
  build:
    runs-on: ubuntu-latest
    env:
-     LIBRARIES: WiFi101 WiFiNINA MKRNB
+     LIBRARIES: WiFi101 WiFiNINA MKRNB ArduinoJson
 
    strategy:
      matrix:
