@@ -574,7 +574,7 @@ void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
    m_nPort = 1883;
    break;
    default:
-   outputDebug("Wrong security type!");
+   outputDebug(ERR, "Wrong security type!");
  }
  m_bInitialized = true;
  m_pMqttclient->onMessage(messageCallback);
@@ -585,7 +585,7 @@ void LiveObjectsGSM::connectNetwork()
  //Set client id as IMEI
  if (!m_bInitialized)
  {
-   outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
+   outputDebug(WARN, "missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
    begin();
  }
 
@@ -606,23 +606,23 @@ void LiveObjectsGSM::connectNetwork()
  }
  else
  {
-   outputDebug("Failed to initialize modem!");
+   outputDebug(ERR, "Failed to initialize modem!");
    while(true){}
  }
 
-  outputDebug("Connecting to cellular network");
-  while ((m_GSMAcces.begin(SECRET_PINNUMBER) != GSM_READY)
-        || (m_GPRSAcces.attachGPRS(SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != GPRS_READY)){
-      outputDebug(".");
+  outputDebug(INFO, "Connecting to cellular network");
+  while ((m_GSMAcces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)
+        || (m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)){
+      outputDebug(TEXT, ".");
   }
- outputDebug("\nYou're connected to the network");
+ outputDebug(INFO, "You're connected to the network");
 
  if(m_nPort==8883){
    if (!m_bCertLoaded) {
-     outputDebug("Loading DigiCert Root CA certificate");
+     outputDebug(INFO, "Loading DigiCert Root CA certificate");
      MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
      if (MODEM.waitForPrompt() != 1) {
-       outputDebug("Problem loading certificate!\nStopping here.");
+       outputDebug(ERR, "Problem loading certificate!\nStopping here.");
        while (1) ;
      }
      else {
@@ -630,7 +630,7 @@ void LiveObjectsGSM::connectNetwork()
        int ready;
        while (!MODEM.ready()) ;
        m_bCertLoaded = true;
-       outputDebug("Certificate loaded");
+       outputDebug(INFO, "Certificate loaded");
      }
    }
  }
@@ -644,7 +644,7 @@ void LiveObjectsGSM::checkNetwork()
 
 void LiveObjectsGSM::disconnectNetwork()
 {
- outputDebug("Disconnecting from cellular network...");
+ outputDebug(INFO, "Disconnecting from cellular network...");
  m_GSMAcces.shutdown();
 }
 
