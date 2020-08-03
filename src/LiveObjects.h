@@ -43,7 +43,6 @@
 #include <ArduinoJson.h>
 #include <ctime>
 #include <Wire.h>
-#include "arduino_secrets.h"
 #include "LiveObjectsCert.h"
 #include "Utils.h"
 
@@ -329,6 +328,7 @@ inline void LiveObjectsBase::outputDebug(T buf, MSGTYPE type)
   }
 }
 
+extern const String SECRET_LIVEOBJECTS_API_KEY;
 
  /******************************************************************************
    NB LTE BOARDS CLASS
@@ -362,6 +362,7 @@ class LiveObjectsNB : public LiveObjectsBase
   NB m_NBAcces;
   NBScanner m_NBScanner;
 };
+<<<<<<< HEAD
 
 typedef LiveObjectsNB LiveObjects;
 #endif
@@ -401,6 +402,12 @@ class LiveObjectsGSM : public LiveObjectsBase
  GSMScanner m_GSMScanner;
 };
 
+=======
+extern const String SECRET_PINNUMBER;
+extern const String SECRET_APN;
+extern const String SECRET_APN_USER;
+extern const String SECRET_APN_PASS;
+>>>>>>> Extracted arduino_secrets.h file into each of examples
 typedef LiveObjectsGSM LiveObjects;
 #endif
 
@@ -441,6 +448,8 @@ class LiveObjectsWiFi : public LiveObjectsBase
   String m_sMac;
   String m_sIP;
 };
+extern const String SECRET_SSID;
+extern const String SECRET_WIFI_PASS;
 typedef LiveObjectsWiFi LiveObjects;
 #endif
 

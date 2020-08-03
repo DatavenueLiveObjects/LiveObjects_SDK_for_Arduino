@@ -376,7 +376,7 @@ void LiveObjectsBase::checkMQTT()
 }
 void LiveObjectsBase::connectMQTT()
 {
-  if (sizeof(SECRET_LIVEOBJECTS_API_KEY) != 33) // check if API key seems correct
+  if (SECRET_LIVEOBJECTS_API_KEY.length() != 32) // check if API key seems correct
   {
     outputDebug("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.", ERROR);
     while (1) ;
@@ -514,10 +514,10 @@ void LiveObjectsNB::connectNetwork()
     while(true);
   }
 
-   outputDebug("Connecting to cellular network");
-   while (m_NBAcces.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
-     outputDebug(".");
-  outputDebug("You're connected to the network");
+   outputDebug(INFO,"Connecting to cellular network");
+   while (m_NBAcces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
+     outputDebug(TEXT,".");
+  outputDebug(INFO,"You're connected to the network");
 
   if(m_nPort==8883){
     if (!m_bCertLoaded) {
@@ -775,7 +775,7 @@ void LiveObjectsWiFi::connectNetwork()
   outputDebug("Attempting to connect to SSID: ");
   outputDebug(SECRET_SSID);
 
-  while (WiFi.begin(SECRET_SSID, SECRET_WIFI_PASS) != WL_CONNECTED) {
+  while (WiFi.begin(SECRET_SSID.c_str(), SECRET_WIFI_PASS.c_str()) != WL_CONNECTED) {
     // failed, retry
     outputDebug(".");
     delay(1000);
