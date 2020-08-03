@@ -9,12 +9,10 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_bCertLoaded(false)
     ,m_pClient(nullptr)
     ,m_pMqttclient(nullptr)
-    ,m_pWire(nullptr)
 {
 }
 LiveObjectsBase::~LiveObjectsBase()
 {
-  m_pWire->end();
   delete m_pMqttclient;
   delete m_pClient;
 }
@@ -410,32 +408,18 @@ void LiveObjectsBase::disconnectMQTT()
   m_pMqttclient->stop();
 }
 
-
-int LiveObjectsBase::readRegister(byte address) {
-    m_pWire->beginTransmission(PMIC_ADDRESS);
-    m_pWire->write(address);
-
-    if (m_pWire->endTransmission(true) != 0) {
-      return -1;
-    }
-
-    if (m_pWire->requestFrom(PMIC_ADDRESS, 1, true) != 1) {
-      return -1;
-    }
-
-    return m_pWire->read();
-}
-
 void LiveObjectsBase::addPowerStatus()
 {
+  #ifdef PMIC_PRESENT
   JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("powerStatus");
   int DATA = readRegister(SYSTEM_STATUS_REGISTER);
-  bool bat = (DATA & (1<<4)) == 0x08;
-  bool usb = (DATA & ((1<<6)||(1<<7))) != 0;
-  bool power = (DATA & (1<<2)) == 0x04;
+  bool bat = (DATA & (1<<0)) == 0;
+  bool usb = (DATA & ((1<<5)|(1<<4))) != 0;
+  bool power=(DATA & (1<<2));
   obj["external_power"] =  usb ? "Yes" : !bat && power ? "Yes" : "No";
   obj["battery_connected"] = bat ? "Yes" : "No";
-  obj["battery_voltage"] = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
+  if(bat) obj["battery_voltage"] = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
+  #endif
 }
 
 
@@ -715,23 +699,9 @@ void LiveObjectsWiFi::begin(Protocol p, Security s, bool bDebug)
     while(true);
   }
 
-  m_pWire = &Wire;
-  m_pWire->begin();
-
-#ifdef ARDUINO_ARCH_SAMD
-    pinMode(PIN_USB_HOST_ENABLE, OUTPUT);
-    digitalWrite(PIN_USB_HOST_ENABLE, LOW);
-    #if defined(ARDUINO_SAMD_MKRGSM1400) || defined(ARDUINO_SAMD_MKRNB1500)
-      pinMode(PMIC_IRQ_PIN, INPUT_PULLUP);
-    #endif
-#endif
-
-    //check PMIC version
-  if (readRegister(PMIC_VERSION_REGISTER) != 0x23) {
-      outputDebug("PMIC NOT COMPATIBLE STOPPING",ERROR);
-      while(true);
-  }
-  
+  #ifdef BATTERY
+  batteryBegin();
+  #endif
   uint8_t mac[6];
   char buff[10];
   WiFi.macAddress(mac);

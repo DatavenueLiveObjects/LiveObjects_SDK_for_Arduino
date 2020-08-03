@@ -1,4 +1,8 @@
 #pragma once
+#include <Wire.h>
+
+
+typedef uint8_t byte;
 template<typename T>
 class ListNode
 {
@@ -74,4 +78,18 @@ int LinkedList<T>::find(T* element)
     tmp = tmp->prev;
   }
   return -1;
+
+
 }
+
+
+/******************************************************************************
+   PMIC constants
+ ******************************************************************************/
+
+#define PMIC_ADDRESS 0x6B
+#define SYSTEM_STATUS_REGISTER 0x08
+#define PMIC_VERSION_REGISTER 0x0A
+
+byte readRegister(byte address);
+void batteryBegin();

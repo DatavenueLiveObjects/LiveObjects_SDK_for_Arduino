@@ -8,12 +8,6 @@
 #define KEEP_ALIVE_NETWORK 10000
 #define SW_REVISION "1.8.0"
 
-/******************************************************************************
-   PMIC constants
- ******************************************************************************/
-#define PMIC_ADDRESS 0x6B
-#define SYSTEM_STATUS_REGISTER 0x08
-#define PMIC_VERSION_REGISTER 0x0A
 
 /******************************************************************************
    LiveObjects MQTT constants
@@ -42,7 +36,6 @@
 #include "ArduinoMqttClient.h"
 #include <ArduinoJson.h>
 #include <ctime>
-#include <Wire.h>
 #include "LiveObjectsCert.h"
 #include "Utils.h"
 
@@ -184,7 +177,6 @@ protected:
   template<typename T, typename ... Args>
   void outputDebug(MSGTYPE type,T item, Args&... args);
   void outputDebug(MSGTYPE type){Serial.print('\n');};
-  int readRegister(byte address);
 
 private:
   void checkMQTT();
@@ -237,7 +229,6 @@ private:
 protected:
     Client* m_pClient;
     MqttClient *m_pMqttclient;
-    TwoWire* m_pWire;
     String m_sMqttid;
     uint16_t m_nPort;
     bool m_bInitialMqttConfig;
@@ -454,7 +445,12 @@ class LiveObjectsWiFi : public LiveObjectsBase
 };
 extern const String SECRET_SSID;
 extern const String SECRET_WIFI_PASS;
+
 typedef LiveObjectsWiFi LiveObjects;
+#endif
+
+#if defined ARDUINO_SAMD_MKRWIFI1010 || ARDUINO_SAMD_MKRNB1500 || ARDUINO_SAMD_MKRGSM1400
+#define PMIC_PRESENT
 #endif
 
 extern LiveObjects& lo;
