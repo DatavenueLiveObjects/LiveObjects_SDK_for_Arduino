@@ -329,7 +329,7 @@ typedef LiveObjectsGSM LiveObjects;
 #include <WiFiNINA.h>
 #define WIFI
 #endif
-#ifdef ARDUINO_SAMD_MKRWIFI1000
+#ifdef ARDUINO_SAMD_MKR1000
 #include <WiFi101.h>
 #define WIFI
 #endif
