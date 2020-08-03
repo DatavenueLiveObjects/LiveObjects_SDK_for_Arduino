@@ -10,8 +10,10 @@ jobs:
      matrix:
        fqbn: [
          "arduino:samd:mkr1000",
+         "arduino:samd:mkrgsm1400",
+         "arduino:samd:mkrnb1500",
          "arduino:samd:mkrwifi1010",
-         "arduino:samd:nano_33_iot",
+         "arduino:samd:nano_33_iot"
        ]
 
    steps:
