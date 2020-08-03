@@ -357,8 +357,6 @@ class LiveObjectsNB : public LiveObjectsBase
   NB m_NBAcces;
   NBScanner m_NBScanner;
 };
-<<<<<<< HEAD
-
 typedef LiveObjectsNB LiveObjects;
 #endif
 
@@ -397,13 +395,14 @@ class LiveObjectsGSM : public LiveObjectsBase
  GSMScanner m_GSMScanner;
 };
 
-=======
+typedef LiveObjectsGSM LiveObjects;
+#endif
+
+#if defined ARDUINO_SAMD_MKRNB1500 || ARDUINO_SAMD_MKRGSM1400
 extern const String SECRET_PINNUMBER;
 extern const String SECRET_APN;
 extern const String SECRET_APN_USER;
 extern const String SECRET_APN_PASS;
->>>>>>> Extracted arduino_secrets.h file into each of examples
-typedef LiveObjectsGSM LiveObjects;
 #endif
 
 /******************************************************************************
