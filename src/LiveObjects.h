@@ -175,8 +175,8 @@ protected:
 
 protected:
   template<typename T, typename ... Args>
-  void outputDebug(MSGTYPE type,T item, Args&... args);
-  void outputDebug(MSGTYPE type){Serial.print('\n');};
+  void outputDebug(LOG_MSGTYPE type,T item, Args&... args);
+  void outputDebug(LOG_MSGTYPE type){Serial.print('\n');};
 
 private:
   void checkMQTT();
@@ -295,7 +295,7 @@ inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
 }
 
 template<typename T, typename ... Args>
-inline void LiveObjectsBase::outputDebug(MSGTYPE type,T item, Args&... args)
+inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
 {
   switch(type)
   {
