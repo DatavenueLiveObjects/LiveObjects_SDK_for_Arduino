@@ -414,19 +414,19 @@ void LiveObjectsBase::disconnectMQTT()
 
 
  /******************************************************************************
-   GSM CLASS
+   NB CLASS
  ******************************************************************************/
 #ifdef ARDUINO_SAMD_MKRNB1500
-LiveObjectsGSM::LiveObjectsGSM()
+LiveObjectsNB::LiveObjectsNB()
   :
    LiveObjectsBase()
   ,m_NBAcces()
 {}
 
-LiveObjectsGSM::~LiveObjectsGSM()
+LiveObjectsNB::~LiveObjectsNB()
 {}
 
-void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
+void LiveObjectsNB::begin(Protocol p, Security s, bool bDebug)
 {
   m_bDebug = bDebug;
   switch(s)
@@ -448,7 +448,7 @@ void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
   m_pMqttclient->onMessage(messageCallback);
 }
 
-void LiveObjectsGSM::connectNetwork()
+void LiveObjectsNB::connectNetwork()
 {
   //Set client id as IMEI
   if (!m_bInitialized)
@@ -502,24 +502,24 @@ void LiveObjectsGSM::connectNetwork()
   }
 }
 
-void LiveObjectsGSM::checkNetwork()
+void LiveObjectsNB::checkNetwork()
 {
   if(m_NBAcces.status()!= NB_READY)
     connectNetwork();
 }
 
-void LiveObjectsGSM::disconnectNetwork()
+void LiveObjectsNB::disconnectNetwork()
 {
   outputDebug("Disconnecting from cellular network...");
   m_NBAcces.shutdown();
 }
 
-void LiveObjectsGSM::messageCallback(int msg)
+void LiveObjectsNB::messageCallback(int msg)
 {
   LiveObjects::get().onMQTTmessage(msg);
 };
 
-void LiveObjectsGSM::addNetworkInfo()
+void LiveObjectsNB::addNetworkInfo()
 {
   JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
   obj["connection_status"] = m_NBAcces.status() == NB_NetworkStatus_t::NB_READY ? "connected":"disconnected";
@@ -528,6 +528,125 @@ void LiveObjectsGSM::addNetworkInfo()
 }
 
 #endif
+
+/******************************************************************************
+  GSM CLASS
+******************************************************************************/
+#ifdef ARDUINO_SAMD_MKRGSM1400
+LiveObjectsGSM::LiveObjectsGSM()
+ :
+  LiveObjectsBase()
+ ,m_GSMAcces()
+{}
+
+LiveObjectsGSM::~LiveObjectsGSM()
+{}
+
+void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
+{
+ m_bDebug = bDebug;
+ switch(s)
+ {
+   case TLS:
+   m_pClient = new GSMSSLClient();
+   m_pMqttclient = new MqttClient(m_pClient);
+   m_nPort = 8883;
+   break;
+   case NONE:
+   m_pClient = new GSMClient();
+   m_pMqttclient = new MqttClient(m_pClient);
+   m_nPort = 1883;
+   break;
+   default:
+   outputDebug("Wrong security type!");
+ }
+ m_bInitialized = true;
+ m_pMqttclient->onMessage(messageCallback);
+}
+
+void LiveObjectsGSM::connectNetwork()
+{
+ //Set client id as IMEI
+ if (!m_bInitialized)
+ {
+   outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
+   begin();
+ }
+
+ GSMModem modem;
+ if(modem.begin())
+ {
+   if(m_sMqttid.length()==0)
+   {
+     String imei="";
+     for(int i=1;i<=3;i++)
+     {
+       imei=modem.getIMEI();
+       if(imei.length()!=0) break;
+       delay(100*i);
+     }
+     m_sMqttid = imei;
+   }
+ }
+ else
+ {
+   outputDebug("Failed to initialize modem!");
+   while(true){}
+ }
+
+  outputDebug("Connecting to cellular network");
+  while ((m_GSMAcces.begin(SECRET_PINNUMBER) != GSM_READY)
+        || (m_GPRSAcces.attachGPRS(SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != GPRS_READY)){
+      outputDebug(".");
+  }
+ outputDebug("\nYou're connected to the network");
+
+ if(m_nPort==8883){
+   if (!m_bCertLoaded) {
+     outputDebug("Loading DigiCert Root CA certificate");
+     MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
+     if (MODEM.waitForPrompt() != 1) {
+       outputDebug("Problem loading certificate!\nStopping here.");
+       while (1) ;
+     }
+     else {
+       MODEM.write(LO_ROOT_CERT.data, LO_ROOT_CERT.size);
+       int ready;
+       while (!MODEM.ready()) ;
+       m_bCertLoaded = true;
+       outputDebug("Certificate loaded");
+     }
+   }
+ }
+}
+
+void LiveObjectsGSM::checkNetwork()
+{
+ if(m_GSMAcces.status()!= GSM_READY)
+   connectNetwork();
+}
+
+void LiveObjectsGSM::disconnectNetwork()
+{
+ outputDebug("Disconnecting from cellular network...");
+ m_GSMAcces.shutdown();
+}
+
+void LiveObjectsGSM::messageCallback(int msg)
+{
+ LiveObjects::get().onMQTTmessage(msg);
+};
+
+void LiveObjectsGSM::addNetworkInfo()
+{
+ JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
+ obj["connection_status"] = m_GSMAcces.status() == GSM_READY ? "connected":"disconnected";
+ obj["strength"] = m_GSMScanner.getSignalStrength();
+ obj["carrier"]=m_GSMScanner.getCurrentCarrier();
+}
+
+#endif
+
  /******************************************************************************
    WiFi CLASS
  ******************************************************************************/

@@ -287,24 +287,24 @@ inline void LiveObjectsBase::outputDebug(T buf)
 
 
  /******************************************************************************
-   GSM BOARDS CLASS
+   NB LTE BOARDS CLASS
  ******************************************************************************/
 #ifdef ARDUINO_SAMD_MKRNB1500
 #include <MKRNB.h>
 
-class LiveObjectsGSM : public LiveObjectsBase
+class LiveObjectsNB : public LiveObjectsBase
 {
   public:
-    static LiveObjectsGSM& get()
+    static LiveObjectsNB& get()
     {
-      static LiveObjectsGSM g; return g;
+      static LiveObjectsNB g; return g;
     }
 
   private:
-    LiveObjectsGSM();
-    ~LiveObjectsGSM();
-    LiveObjectsGSM(const LiveObjectsGSM&)  = delete;
-    LiveObjectsGSM& operator== (const LiveObjectsGSM&) =  delete;
+    LiveObjectsNB();
+    ~LiveObjectsNB();
+    LiveObjectsNB(const LiveObjectsNB&)  = delete;
+    LiveObjectsNB& operator== (const LiveObjectsNB&) =  delete;
   public:
     void begin(Protocol p=MQTT, Security s=TLS, bool bDebug=true) override;
     void addNetworkInfo() override;
@@ -317,6 +317,44 @@ class LiveObjectsGSM : public LiveObjectsBase
   private:
   NB m_NBAcces;
   NBScanner m_NBScanner;
+};
+
+typedef LiveObjectsNB LiveObjects;
+#endif
+
+
+/******************************************************************************
+  GSM LTE BOARDS CLASS
+******************************************************************************/
+#ifdef ARDUINO_SAMD_MKRGSM1400
+#include <MKRGSM.h>
+
+class LiveObjectsGSM : public LiveObjectsBase
+{
+ public:
+   static LiveObjectsGSM& get()
+   {
+     static LiveObjectsGSM g; return g;
+   }
+
+ private:
+   LiveObjectsGSM();
+   ~LiveObjectsGSM();
+   LiveObjectsGSM(const LiveObjectsGSM&)  = delete;
+   LiveObjectsGSM& operator== (const LiveObjectsGSM&) =  delete;
+ public:
+   void begin(Protocol p=MQTT, Security s=TLS, bool bDebug=true) override;
+   void addNetworkInfo() override;
+
+ private:
+   void connectNetwork() override;
+   void checkNetwork() override;
+   void disconnectNetwork() override;
+   static void messageCallback(int msg);
+ private:
+ GSM m_GSMAcces;
+ GPRS m_GPRSAcces;
+ GSMScanner m_GSMScanner;
 };
 
 typedef LiveObjectsGSM LiveObjects;
