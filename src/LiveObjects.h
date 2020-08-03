@@ -51,13 +51,6 @@
    TYPEDEFS/ENUMS
  ******************************************************************************/
 
-enum MSGTYPE
-{
-  INFO,
-  WARNING,
-  ERROR
-};
-
 enum LiveObjects_networkStatus
 {
   CONNECTED,
@@ -103,6 +96,13 @@ enum Security
   //,DTLS
 };
 
+enum LOG_MSGTYPE
+{
+  INFO,
+  WARN,
+  ERR,
+  TEXT
+};
 
 typedef void (*onParameterUpdateCallback)();
 typedef void (*onCommandCallback)(const String, String&);
