@@ -1,0 +1,27 @@
+name: Compile Examples
+on: [push, pull_request]
+jobs:
+ build:
+   runs-on: ubuntu-latest
+   env:
+     LIBRARIES: WiFi101 WiFiNINA MKRNB
+
+   strategy:
+     matrix:
+       fqbn: [
+         "arduino:samd:mkr1000",
+         "arduino:samd:mkr1400",
+         "arduino:samd:mkr1500",
+         "arduino:samd:mkrwifi1010",
+         "arduino:samd:nano_33_iot"
+       ]
+
+   steps:
+     - uses: actions/checkout@v1
+       with:
+         fetch-depth: 1
+     - name: compile-examples for official Arduino boards
+       uses: arduino/actions/libraries/compile-examples@master
+       with:
+         fqbn: ${{ matrix.fqbn }}
+         libraries: ${{ env.LIBRARIES }}
