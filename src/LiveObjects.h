@@ -328,7 +328,7 @@ extern const String SECRET_LIVEOBJECTS_API_KEY;
  /******************************************************************************
    NB LTE BOARDS CLASS
  ******************************************************************************/
-#ifdef ARDUINO_SAMD_MKRNB1500
+#if defined ARDUINO_SAMD_MKRNB1500
 #include <MKRNB.h>
 
 class LiveObjectsNB : public LiveObjectsBase
@@ -364,7 +364,7 @@ typedef LiveObjectsNB LiveObjects;
 /******************************************************************************
   GSM LTE BOARDS CLASS
 ******************************************************************************/
-#ifdef ARDUINO_SAMD_MKRGSM1400
+#if defined ARDUINO_SAMD_MKRGSM1400
 #include <MKRGSM.h>
 
 class LiveObjectsGSM : public LiveObjectsBase
