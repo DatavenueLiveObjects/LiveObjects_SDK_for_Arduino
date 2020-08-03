@@ -181,8 +181,9 @@ protected:
   virtual void disconnectNetwork() =0;
 
 protected:
-  template<typename T>
-  void outputDebug(T buf, MSGTYPE type=INFO);
+  template<typename T, typename ... Args>
+  void outputDebug(MSGTYPE type,T item, Args&... args);
+  void outputDebug(MSGTYPE type){Serial.print('\n');};
   int readRegister(byte address);
 
 private:
@@ -302,8 +303,8 @@ inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
   easyDataPayload[JSONVALUE][label] = value;
 }
 
-template<typename T>
-inline void LiveObjectsBase::outputDebug(T buf, MSGTYPE type)
+template<typename T, typename ... Args>
+inline void LiveObjectsBase::outputDebug(MSGTYPE type,T item, Args&... args)
 {
   switch(type)
   {
@@ -311,21 +312,24 @@ inline void LiveObjectsBase::outputDebug(T buf, MSGTYPE type)
       if(m_bDebug)
       {
         Serial.print("[INFO] ");
-        Serial.println(buf);
+        Serial.print(item);
       }
       break;
-    case WARNING:
+    case WARN:
       if(m_bDebug)
       {
         Serial.print("[WARNING] ");
-        Serial.println(buf);
+        Serial.print(item);
       }
       break;
-    case ERROR:
+    case ERR:
       Serial.print("[ERROR] ");
-      Serial.println(buf);
+      Serial.print(item);
       break;
+    default:
+      Serial.print(item);
   }
+  outputDebug(TEXT,args...);
 }
 
 extern const String SECRET_LIVEOBJECTS_API_KEY;
