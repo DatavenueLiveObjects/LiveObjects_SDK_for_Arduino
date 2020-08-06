@@ -162,7 +162,7 @@ void LiveObjectsBase::configurationManager(int messageSize) {
     if(m_bDebug)
     {
     serializeJsonPretty(configIn, Serial);
-    Serial.println("");
+    outputDebug(TEXT);
     }
     configOut=configIn;
     JsonObject obj =  configOut[JSONCFG];
@@ -228,7 +228,7 @@ void LiveObjectsBase::commandManager() {
   if(m_bDebug)
   {
   serializeJsonPretty(cmdIn, Serial);
-  Serial.println("");
+  outputDebug(TEXT);
   }
   for (uint8_t i = 0; i < commands.size(); i++) // only with MQTT or SMS !!
     if (cmdIn[F("req")] == commands[i]->label) {
@@ -301,7 +301,7 @@ void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload)
   if(m_bDebug)
   {
   serializeJsonPretty(payload, Serial);
-  Serial.println("");
+  outputDebug(TEXT);
   }
   if( measureJson(payload) >= PAYLOAD_DATA_SIZE )
   {
@@ -725,7 +725,7 @@ void LiveObjectsWiFi::connectNetwork()
     begin();
   }
   if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("Communication with WiFi module failed! Stopping here...");
+    outputDebug(ERR,"Communication with WiFi module failed! Stopping here...");
     // don't continue
     while (true);
   }
