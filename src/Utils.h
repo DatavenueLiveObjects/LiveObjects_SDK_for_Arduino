@@ -88,9 +88,9 @@ int LinkedList<T>::find(T* element)
  ******************************************************************************/
 
 #if defined ARDUINO_SAMD_MKRWIFI1010
-#define PMIC_ADDRESS 0x60
-#else
 #define PMIC_ADDRESS 0x6B
+#else
+#define PMIC_ADDRESS 0x60
 #endif
 #define SYSTEM_STATUS_REGISTER 0x08
 #define PMIC_VERSION_REGISTER 0x0A
