@@ -297,7 +297,7 @@ void LiveObjectsBase::sendData(const String customPayload) {
 }
 
 void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload) {
-  outputDebug(INFO,"Publishing message on topic", topic);
+  outputDebug(INFO,"Publishing message on topic: ", topic);
   if(m_bDebug)
   {
   serializeJsonPretty(payload, Serial);
