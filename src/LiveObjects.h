@@ -408,11 +408,11 @@ extern const String SECRET_APN_PASS;
 /******************************************************************************
   WIFI BOARDS CLASS
 ******************************************************************************/
-#if defined ARDUINO_SAMD_MKRWIFI1010 || ARDUINO_SAMD_NANO_33_IOT
+#if defined ARDUINO_SAMD_MKRWIFI1010 || ARDUINO_SAMD_NANO_33_IOT || ARDUINO_SAMD_MKRVIDOR4000
 #include <WiFiNINA.h>
 #define WIFI
 #endif
-#ifdef ARDUINO_SAMD_MKR1000
+#if ARDUINO_SAMD_MKR1000
 #include <WiFi101.h>
 #define WIFI
 #endif
