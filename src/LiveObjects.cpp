@@ -685,6 +685,10 @@ void LiveObjectsWiFi::begin(Protocol p, Security s, bool bDebug)
   switch(s)
   {
     case TLS:
+    #ifdef ARDUINO_SAMD_MKR1000
+      outputDebug(ERR,"TLS NOT COMPATIBLE, STOPPING...");
+      while(true);
+    #endif
     m_pClient = new WiFiSSLClient();
     m_pMqttclient = new MqttClient(m_pClient);
     m_nPort = 8883;
