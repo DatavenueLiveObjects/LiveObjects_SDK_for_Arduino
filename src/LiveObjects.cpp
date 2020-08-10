@@ -153,10 +153,10 @@ void LiveObjectsBase::ptrTyper(const LiveObjects_parameter param, const JsonDocu
  ******************************************************************************/
 
 void LiveObjectsBase::configurationManager(int messageSize) {
-  StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configOut;
+  StaticJsonDocument<PAYLOAD_DATA_SIZE> configOut;
   if (messageSize >= 0)
   { // config update received
-    StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configIn;
+    StaticJsonDocument<PAYLOAD_DATA_SIZE> configIn;
     deserializeJson(configIn, *m_pMqttclient);
 
     if(m_bDebug)
@@ -221,8 +221,8 @@ void LiveObjectsBase::addCommand(const String name, onCommandCallback callback) 
 }
 
 void LiveObjectsBase::commandManager() {
-  StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdIn;
-  StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdOut;
+  StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdIn;
+  StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdOut;
   deserializeJson(cmdIn, *m_pMqttclient);
 
   if(m_bDebug)

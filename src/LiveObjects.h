@@ -3,8 +3,7 @@
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
 #define PARAMETERS_NB_MAX 10
-#define PAYLOAD_DEVMGT_SIZE 1024
-#define PAYLOAD_DATA_SIZE 512
+#define PAYLOAD_DATA_SIZE 1024
 #define KEEP_ALIVE_NETWORK 10000
 #define SW_REVISION "1.8.0"
 
