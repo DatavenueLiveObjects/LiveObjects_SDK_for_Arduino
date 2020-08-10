@@ -87,7 +87,7 @@ int LinkedList<T>::find(T* element)
    PMIC constants
  ******************************************************************************/
 
-#if defined ARDUINO_SAMD_MKRWIFI1010
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRGSM1400
 #define PMIC_ADDRESS 0x6B
 #else
 #define PMIC_ADDRESS 0x60

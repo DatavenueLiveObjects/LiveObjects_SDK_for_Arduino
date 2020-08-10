@@ -397,7 +397,7 @@ class LiveObjectsGSM : public LiveObjectsBase
 typedef LiveObjectsGSM LiveObjects;
 #endif
 
-#if defined ARDUINO_SAMD_MKRNB1500 || ARDUINO_SAMD_MKRGSM1400
+#if defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 extern const String SECRET_PINNUMBER;
 extern const String SECRET_APN;
 extern const String SECRET_APN_USER;
@@ -407,7 +407,7 @@ extern const String SECRET_APN_PASS;
 /******************************************************************************
   WIFI BOARDS CLASS
 ******************************************************************************/
-#if defined ARDUINO_SAMD_MKRWIFI1010 || ARDUINO_SAMD_NANO_33_IOT || ARDUINO_SAMD_MKRVIDOR4000
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_NANO_33_IOT || defined ARDUINO_SAMD_MKRVIDOR4000
 #include <WiFiNINA.h>
 #define WIFI
 #endif
@@ -447,7 +447,7 @@ extern const String SECRET_WIFI_PASS;
 typedef LiveObjectsWiFi LiveObjects;
 #endif
 
-#if defined ARDUINO_SAMD_MKRWIFI1010 || ARDUINO_SAMD_MKRNB1500 || ARDUINO_SAMD_MKRGSM1400
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 #define PMIC_PRESENT
 #endif
 

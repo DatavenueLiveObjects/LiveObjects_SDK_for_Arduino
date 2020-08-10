@@ -248,6 +248,9 @@ void LiveObjectsBase::commandManager() {
 
 void LiveObjectsBase::connect()
 {
+  #ifdef PMIC_PRESENT
+  batteryBegin();
+  #endif
   connectNetwork();
   connectMQTT();
 }
@@ -703,9 +706,7 @@ void LiveObjectsWiFi::begin(Protocol p, Security s, bool bDebug)
     while(true);
   }
 
-  #ifdef BATTERY
-  batteryBegin();
-  #endif
+
   uint8_t mac[6];
   char buff[10];
   WiFi.macAddress(mac);
