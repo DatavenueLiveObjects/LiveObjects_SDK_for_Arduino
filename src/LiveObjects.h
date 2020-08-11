@@ -1,14 +1,16 @@
 #pragma once
-//#define ARDUINO_SAMD_MKRWIFI1010
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
 #define PARAMETERS_NB_MAX 10
-#define PAYLOAD_DEVMGT_SIZE 1024
-#define PAYLOAD_DATA_SIZE 512
+#define PAYLOAD_DATA_SIZE 1024
 #define KEEP_ALIVE_NETWORK 10000
 #define SW_REVISION "1.8.0"
 
+
+/******************************************************************************
+   LiveObjects MQTT constants
+ ******************************************************************************/
 #define MQTT_BROKER "liveobjects.orange-business.com"
 #define MQTT_USER "json+device"
 #define MQTT_PUBDATA "dev/data"
@@ -17,6 +19,9 @@
 #define MQTT_SUBCMD "dev/cmd"
 #define MQTT_PUBCMD "dev/cmd/res"
 
+/******************************************************************************
+   JSON payload constants
+ ******************************************************************************/
 #define JSONCID "cid"
 #define JSONCFG "cfg"
 #define JSONCFGVALUE "v"
@@ -30,7 +35,6 @@
 #include "ArduinoMqttClient.h"
 #include <ArduinoJson.h>
 #include <ctime>
-#include "arduino_secrets.h"
 #include "LiveObjectsCert.h"
 #include "Utils.h"
 
@@ -83,6 +87,13 @@ enum Security
   //,DTLS
 };
 
+enum LOG_MSGTYPE
+{
+  INFO,
+  WARN,
+  ERR,
+  TEXT
+};
 
 typedef void (*onParameterUpdateCallback)();
 typedef void (*onCommandCallback)(const String, String&);
@@ -107,7 +118,8 @@ public:
        ,value(variable)
        ,type(t)
        ,variableType(vt)
-       ,callback(c){}
+       ,callback(c)
+      {}
 
       bool operator==(const LiveObjects_parameter& p){ return label == p.label; }
       String label;
@@ -139,6 +151,7 @@ public:
 public:
   void addTimestamp(time_t timestamp);
   void addLocation(double lat, double lon, float alt);
+  void addPowerStatus();
   virtual void addNetworkInfo()=0;
   void clearPayload();
 
@@ -160,8 +173,9 @@ protected:
   virtual void disconnectNetwork() =0;
 
 protected:
-  template<typename T>
-  void outputDebug(T buf);
+  template<typename T, typename ... Args>
+  void outputDebug(LOG_MSGTYPE type,T item, Args&... args);
+  void outputDebug(LOG_MSGTYPE type){Serial.print('\n');};
 
 private:
   void checkMQTT();
@@ -279,17 +293,41 @@ inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
   easyDataPayload[JSONVALUE][label] = value;
 }
 
-template<typename T>
-inline void LiveObjectsBase::outputDebug(T buf)
+template<typename T, typename ... Args>
+inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
 {
-  if(m_bDebug) Serial.println(buf);
+  switch(type)
+  {
+    case INFO:
+      if(m_bDebug)
+      {
+        Serial.print("[INFO] ");
+        Serial.print(item);
+      }
+      break;
+    case WARN:
+      if(m_bDebug)
+      {
+        Serial.print("[WARNING] ");
+        Serial.print(item);
+      }
+      break;
+    case ERR:
+      Serial.print("[ERROR] ");
+      Serial.print(item);
+      break;
+    default:
+      Serial.print(item);
+  }
+  outputDebug(TEXT,args...);
 }
 
+extern const String SECRET_LIVEOBJECTS_API_KEY;
 
  /******************************************************************************
    NB LTE BOARDS CLASS
  ******************************************************************************/
-#ifdef ARDUINO_SAMD_MKRNB1500
+#if defined ARDUINO_SAMD_MKRNB1500
 #include <MKRNB.h>
 
 class LiveObjectsNB : public LiveObjectsBase
@@ -318,7 +356,6 @@ class LiveObjectsNB : public LiveObjectsBase
   NB m_NBAcces;
   NBScanner m_NBScanner;
 };
-
 typedef LiveObjectsNB LiveObjects;
 #endif
 
@@ -326,7 +363,7 @@ typedef LiveObjectsNB LiveObjects;
 /******************************************************************************
   GSM LTE BOARDS CLASS
 ******************************************************************************/
-#ifdef ARDUINO_SAMD_MKRGSM1400
+#if defined ARDUINO_SAMD_MKRGSM1400
 #include <MKRGSM.h>
 
 class LiveObjectsGSM : public LiveObjectsBase
@@ -360,14 +397,21 @@ class LiveObjectsGSM : public LiveObjectsBase
 typedef LiveObjectsGSM LiveObjects;
 #endif
 
+#if defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
+extern const String SECRET_PINNUMBER;
+extern const String SECRET_APN;
+extern const String SECRET_APN_USER;
+extern const String SECRET_APN_PASS;
+#endif
+
 /******************************************************************************
   WIFI BOARDS CLASS
 ******************************************************************************/
-#if defined ARDUINO_SAMD_MKRWIFI1010 || ARDUINO_SAMD_NANO_33_IOT
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_NANO_33_IOT || defined ARDUINO_SAMD_MKRVIDOR4000
 #include <WiFiNINA.h>
 #define WIFI
 #endif
-#ifdef ARDUINO_SAMD_MKR1000
+#if ARDUINO_SAMD_MKR1000
 #include <WiFi101.h>
 #define WIFI
 #endif
@@ -395,10 +439,16 @@ class LiveObjectsWiFi : public LiveObjectsBase
     static void messageCallback(int msg);
   private:
   String m_sMac;
+  String m_sIP;
 };
+extern const String SECRET_SSID;
+extern const String SECRET_WIFI_PASS;
+
 typedef LiveObjectsWiFi LiveObjects;
 #endif
 
-#ifndef DO_NOT_DEFINE_LO
-extern LiveObjects& lo =  LiveObjects::get();
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
+#define PMIC_PRESENT
 #endif
+
+extern LiveObjects& lo;

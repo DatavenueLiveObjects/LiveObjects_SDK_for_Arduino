@@ -1,4 +1,3 @@
-#define DO_NOT_DEFINE_LO
 #include "LiveObjects.h"
 
 
@@ -154,15 +153,17 @@ void LiveObjectsBase::ptrTyper(const LiveObjects_parameter param, const JsonDocu
  ******************************************************************************/
 
 void LiveObjectsBase::configurationManager(int messageSize) {
-  StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configOut;
+  StaticJsonDocument<PAYLOAD_DATA_SIZE> configOut;
   if (messageSize >= 0)
   { // config update received
-    StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> configIn;
+    StaticJsonDocument<PAYLOAD_DATA_SIZE> configIn;
     deserializeJson(configIn, *m_pMqttclient);
 
+    if(m_bDebug)
+    {
     serializeJsonPretty(configIn, Serial);
-    outputDebug('\n');
-
+    outputDebug(TEXT);
+    }
     configOut=configIn;
     JsonObject obj =  configOut[JSONCFG];
     LiveObjects_parameter tmp("",nullptr,BINARY,T_BOOL,nullptr);
@@ -220,12 +221,15 @@ void LiveObjectsBase::addCommand(const String name, onCommandCallback callback) 
 }
 
 void LiveObjectsBase::commandManager() {
-  StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdIn;
-  StaticJsonDocument<PAYLOAD_DEVMGT_SIZE> cmdOut;
+  StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdIn;
+  StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdOut;
   deserializeJson(cmdIn, *m_pMqttclient);
 
+  if(m_bDebug)
+  {
   serializeJsonPretty(cmdIn, Serial);
-  outputDebug('\n');
+  outputDebug(TEXT);
+  }
   for (uint8_t i = 0; i < commands.size(); i++) // only with MQTT or SMS !!
     if (cmdIn[F("req")] == commands[i]->label) {
       cmdOut[JSONCID] = cmdIn[JSONCID];
@@ -244,6 +248,9 @@ void LiveObjectsBase::commandManager() {
 
 void LiveObjectsBase::connect()
 {
+  #ifdef PMIC_PRESENT
+  batteryBegin();
+  #endif
   connectNetwork();
   connectMQTT();
 }
@@ -260,7 +267,7 @@ void LiveObjectsBase::networkCheck() {
 void LiveObjectsBase::disconnect() {
   disconnectMQTT();
   disconnectNetwork();
-  outputDebug("Offline.\n");
+  outputDebug(INFO,"Offline.");
   networkStatus = DISCONNECTED;
 }
 
@@ -270,8 +277,7 @@ void LiveObjectsBase::disconnect() {
 
 void LiveObjectsBase::onMQTTmessage(int messageSize) {
   String topic = m_pMqttclient->messageTopic();
-  outputDebug("Received a message on topic '");
-  outputDebug(topic);
+  outputDebug(INFO,"Received a message on topic: ", topic);
 
   if (topic == MQTT_SUBCFG)
     configurationManager(messageSize);
@@ -294,13 +300,15 @@ void LiveObjectsBase::sendData(const String customPayload) {
 }
 
 void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload) {
-  outputDebug("Publishing message");
-  outputDebug(topic);
+  outputDebug(INFO,"Publishing message on topic: ", topic);
+  if(m_bDebug)
+  {
   serializeJsonPretty(payload, Serial);
-
+  outputDebug(TEXT);
+  }
   if( measureJson(payload) >= PAYLOAD_DATA_SIZE )
   {
-    outputDebug("Message size is to big, aborting send command.");
+    outputDebug(ERR,"Message size is to big, aborting send command.");
     return;
   }
 
@@ -367,9 +375,9 @@ void LiveObjectsBase::checkMQTT()
 }
 void LiveObjectsBase::connectMQTT()
 {
-  if (sizeof(SECRET_LIVEOBJECTS_API_KEY) != 33) // check if API key seems correct
+  if (SECRET_LIVEOBJECTS_API_KEY.length() != 32) // check if API key seems correct
   {
-    outputDebug("Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.");
+    outputDebug(ERR,"Please check your Live Objects API key (arduino_secrets.h file).\nStopping here.");
     while (1) ;
   }
 
@@ -379,13 +387,11 @@ void LiveObjectsBase::connectMQTT()
     m_pMqttclient->setUsernamePassword(MQTT_USER, SECRET_LIVEOBJECTS_API_KEY);
   }
 
-  outputDebug("Connecting to MQTT broker '");
-  outputDebug(MQTT_BROKER);
-  outputDebug(m_nPort);
+  outputDebug(INFO,"Connecting to MQTT broker ",MQTT_BROKER,":",m_nPort);
 
 
-  while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(".");
-  outputDebug("\nYou're connected to the MQTT broker");
+  while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(TEXT,".");
+  outputDebug(INFO,"You're connected to the MQTT broker");
 
   networkStatus = CONNECTED;
   m_pMqttclient->subscribe(MQTT_SUBCFG);
@@ -401,11 +407,23 @@ void LiveObjectsBase::connectMQTT()
 }
 void LiveObjectsBase::disconnectMQTT()
 {
-  outputDebug("\nClosing MQTT connection...");
+  outputDebug(INFO,"Closing MQTT connection...");
   m_pMqttclient->stop();
 }
 
-
+void LiveObjectsBase::addPowerStatus()
+{
+  #ifdef PMIC_PRESENT
+  JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("powerStatus");
+  int DATA = readRegister(SYSTEM_STATUS_REGISTER);
+  bool bat = (DATA & (1<<0)) == 0;
+  bool usb = (DATA & ((1<<5)|(1<<4))) != 0;
+  bool power=(DATA & (1<<2));
+  obj["external_power"] =  usb ? "Yes" : !bat && power ? "Yes" : "No";
+  obj["battery_connected"] = bat ? "Yes" : "No";
+  if(bat) obj["battery_voltage"] = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
+  #endif
+}
 
 
 
@@ -442,7 +460,8 @@ void LiveObjectsNB::begin(Protocol p, Security s, bool bDebug)
     m_nPort = 1883;
     break;
     default:
-    outputDebug("Wrong security type!");
+    outputDebug(ERR,"Wrong security type! stopping...");
+    while(true);
   }
   m_bInitialized = true;
   m_pMqttclient->onMessage(messageCallback);
@@ -453,7 +472,7 @@ void LiveObjectsNB::connectNetwork()
   //Set client id as IMEI
   if (!m_bInitialized)
   {
-    outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
+    outputDebug(WARN,"missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
     begin();
   }
 
@@ -474,21 +493,21 @@ void LiveObjectsNB::connectNetwork()
   }
   else
   {
-    outputDebug("Failed to initialize modem!");
-    while(true){}
+    outputDebug(ERR,"Failed to initialize modem!" );
+    while(true);
   }
 
-   outputDebug("Connecting to cellular network");
-   while (m_NBAcces.begin(SECRET_PINNUMBER, SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != NB_READY)
-     outputDebug(".");
-  outputDebug("\nYou're connected to the network");
+   outputDebug(INFO,"Connecting to cellular network");
+   while (m_NBAcces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
+     outputDebug(TEXT,".");
+  outputDebug(INFO,"You're connected to the network");
 
   if(m_nPort==8883){
     if (!m_bCertLoaded) {
-      outputDebug("Loading DigiCert Root CA certificate");
+      outputDebug(INFO,"Loading DigiCert Root CA certificate");
       MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
       if (MODEM.waitForPrompt() != 1) {
-        outputDebug("Problem loading certificate!\nStopping here.");
+        outputDebug(ERR,"Problem loading certificate!\nStopping here.");
         while (1) ;
       }
       else {
@@ -496,7 +515,7 @@ void LiveObjectsNB::connectNetwork()
         int ready;
         while (!MODEM.ready()) ;
         m_bCertLoaded = true;
-        outputDebug("Certificate loaded");
+        outputDebug(INFO,"Certificate loaded");
       }
     }
   }
@@ -510,7 +529,7 @@ void LiveObjectsNB::checkNetwork()
 
 void LiveObjectsNB::disconnectNetwork()
 {
-  outputDebug("Disconnecting from cellular network...");
+  outputDebug(INFO,"Disconnecting from cellular network...");
   m_NBAcces.shutdown();
 }
 
@@ -558,7 +577,7 @@ void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
    m_nPort = 1883;
    break;
    default:
-   outputDebug("Wrong security type!");
+   outputDebug(ERR, "Wrong security type!");
  }
  m_bInitialized = true;
  m_pMqttclient->onMessage(messageCallback);
@@ -569,7 +588,7 @@ void LiveObjectsGSM::connectNetwork()
  //Set client id as IMEI
  if (!m_bInitialized)
  {
-   outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
+   outputDebug(WARN, "missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
    begin();
  }
 
@@ -590,23 +609,23 @@ void LiveObjectsGSM::connectNetwork()
  }
  else
  {
-   outputDebug("Failed to initialize modem!");
+   outputDebug(ERR, "Failed to initialize modem!");
    while(true){}
  }
 
-  outputDebug("Connecting to cellular network");
-  while ((m_GSMAcces.begin(SECRET_PINNUMBER) != GSM_READY)
-        || (m_GPRSAcces.attachGPRS(SECRET_APN, SECRET_APN_USER, SECRET_APN_PASS) != GPRS_READY)){
-      outputDebug(".");
+  outputDebug(INFO, "Connecting to cellular network");
+  while ((m_GSMAcces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)
+        || (m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)){
+      outputDebug(TEXT, ".");
   }
- outputDebug("\nYou're connected to the network");
+ outputDebug(INFO, "You're connected to the network");
 
  if(m_nPort==8883){
    if (!m_bCertLoaded) {
-     outputDebug("Loading DigiCert Root CA certificate");
+     outputDebug(INFO, "Loading DigiCert Root CA certificate");
      MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
      if (MODEM.waitForPrompt() != 1) {
-       outputDebug("Problem loading certificate!\nStopping here.");
+       outputDebug(ERR, "Problem loading certificate!\nStopping here.");
        while (1) ;
      }
      else {
@@ -614,7 +633,7 @@ void LiveObjectsGSM::connectNetwork()
        int ready;
        while (!MODEM.ready()) ;
        m_bCertLoaded = true;
-       outputDebug("Certificate loaded");
+       outputDebug(INFO, "Certificate loaded");
      }
    }
  }
@@ -628,7 +647,7 @@ void LiveObjectsGSM::checkNetwork()
 
 void LiveObjectsGSM::disconnectNetwork()
 {
- outputDebug("Disconnecting from cellular network...");
+ outputDebug(INFO, "Disconnecting from cellular network...");
  m_GSMAcces.shutdown();
 }
 
@@ -655,6 +674,7 @@ LiveObjectsWiFi::LiveObjectsWiFi()
   :
    LiveObjectsBase()
    ,m_sMac()
+   ,m_sIP()
 {
 }
 LiveObjectsWiFi::~LiveObjectsWiFi()
@@ -668,6 +688,10 @@ void LiveObjectsWiFi::begin(Protocol p, Security s, bool bDebug)
   switch(s)
   {
     case TLS:
+    #ifdef ARDUINO_SAMD_MKR1000
+      outputDebug(ERR,"TLS NOT COMPATIBLE, STOPPING...");
+      while(true);
+    #endif
     m_pClient = new WiFiSSLClient();
     m_pMqttclient = new MqttClient(m_pClient);
     m_nPort = 8883;
@@ -678,9 +702,10 @@ void LiveObjectsWiFi::begin(Protocol p, Security s, bool bDebug)
     m_nPort = 1883;
     break;
     default:
-    outputDebug("Wrong security type! Stopping...");
+    outputDebug(ERR,"Wrong security type! Stopping...");
     while(true);
   }
+
 
   uint8_t mac[6];
   char buff[10];
@@ -701,28 +726,36 @@ void LiveObjectsWiFi::connectNetwork()
 {
   if(!m_bInitialized)
   {
-    outputDebug("missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
+    outputDebug(WARN,"missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
     begin();
   }
   if (WiFi.status() == WL_NO_SHIELD) {
-    Serial.println("Communication with WiFi module failed!");
+    outputDebug(ERR,"Communication with WiFi module failed! Stopping here...");
     // don't continue
     while (true);
   }
 
-  outputDebug("WiFi firmware version ");
-  outputDebug(WiFi.firmwareVersion());
-
-  outputDebug("Attempting to connect to SSID: ");
-  outputDebug(SECRET_SSID);
-  outputDebug(" ");
-
-  while (WiFi.begin(SECRET_SSID, SECRET_WIFI_PASS) != WL_CONNECTED) {
-    // failed, retry
-    outputDebug(".");
-    delay(3000);
+  if(String(SECRET_SSID).length()<1)
+  {
+    outputDebug(ERR,"SECRET_SSID is empty, check arduino_secrets.h, Stopping here...");
+    while(true);
   }
+  String s = WiFi.firmwareVersion();
+  outputDebug(INFO,"WiFi firmware version ",s);
 
+  outputDebug(INFO,"Attempting to connect to SSID: ", SECRET_SSID);
+
+  while (WiFi.begin(SECRET_SSID.c_str(), SECRET_WIFI_PASS.c_str()) != WL_CONNECTED) {
+    // failed, retry
+    outputDebug(TEXT,".");
+    delay(1000);
+  }
+  IPAddress ip = WiFi.localIP();
+  for(int i=0;i<4;++i)
+  {
+    m_sIP+=ip[i];
+    if(i!=3) m_sIP+='.';
+  }
 
 }
 void LiveObjectsWiFi::checkNetwork()
@@ -732,7 +765,7 @@ void LiveObjectsWiFi::checkNetwork()
 }
 void LiveObjectsWiFi::disconnectNetwork()
 {
-  outputDebug("Disconnecting WiFi");
+  outputDebug(INFO,"Disconnecting WiFi");
   WiFi.disconnect();
 }
 void LiveObjectsWiFi::messageCallback(int msg)
@@ -743,19 +776,15 @@ void LiveObjectsWiFi::messageCallback(int msg)
 void LiveObjectsWiFi::addNetworkInfo()
 {
   JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
-  IPAddress ip = WiFi.localIP();
   obj["mac"] = m_sMac;
   obj["ssid"] = SECRET_SSID;
-  String addres;
-  for(int i=0;i<4;++i)
-  {
-    addres+=ip[i];
-    if(i!=3) addres+='.';
-  }
-  obj["ip"] = addres;
-  addres = WiFi.RSSI();
-  addres += " dbm";
-  obj["strength"] = addres;
+  obj["ip"] = m_sIP;
+  String tmp;
+  tmp = WiFi.RSSI();
+  tmp += " dbm";
+  obj["strength"] = tmp;
 
 }
 #endif
+
+LiveObjects& lo = LiveObjects::get();
