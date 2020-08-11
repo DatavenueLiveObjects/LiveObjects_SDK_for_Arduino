@@ -1,10 +1,14 @@
 #pragma once
+
+
+#define ARDUINO_SAMD_MKRGSM1400
+
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
 #define PARAMETERS_NB_MAX 10
 #define PAYLOAD_DATA_SIZE 1024
-#define KEEP_ALIVE_NETWORK 10000
+#define KEEP_ALIVE_NETWORK 1000
 #define SW_REVISION "1.8.0"
 
 
@@ -76,14 +80,16 @@ enum LiveObjects_variableType {
 enum Protocol
 {
   MQTT,
-  //,SMS
+  SMS
   //,LORA
 };
 
-enum Security
+enum Mode
 {
   NONE
   ,TLS
+  ,BIN_
+  ,TXT
   //,DTLS
 };
 
@@ -131,8 +137,9 @@ public:
     struct LiveObjects_command
     {
       LiveObjects_command(String l, onCommandCallback c): label(l), callback(c){}
-        String label;
-        onCommandCallback callback;
+      bool operator==(const LiveObjects_command& p){ return label == p.label; }
+      String label;
+      onCommandCallback callback;
     };
 
 /******************************************************************************
@@ -141,7 +148,7 @@ public:
 
 public:
   void setProtocol(Protocol p);
-  void setSecurity(Security s);
+  void setMode(Mode s);
   void enableDebug(bool b);
   void setClientID(const String id);
 
@@ -167,16 +174,18 @@ public:
   void loop();
 
 protected:
-  virtual void begin(Protocol, Security, bool) =0;
+  virtual void begin(Protocol, Mode, bool) =0;
   virtual void connectNetwork() =0;
   virtual void checkNetwork() =0;
   virtual void disconnectNetwork() =0;
+  template<typename T,typename ... Args>
+  void addToStringPayload(T val, Args ... args);
+  void addToStringPayload(){};
 
 protected:
   template<typename T, typename ... Args>
   void outputDebug(LOG_MSGTYPE type,T item, Args&... args);
-  void outputDebug(LOG_MSGTYPE type){Serial.print('\n');};
-
+  void outputDebug(LOG_MSGTYPE type = TEXT){Serial.print('\n');};
 private:
   void checkMQTT();
   void connectMQTT();
@@ -229,7 +238,10 @@ protected:
     Client* m_pClient;
     MqttClient *m_pMqttclient;
     String m_sMqttid;
+    String m_sPayload;
     uint16_t m_nPort;
+    Protocol m_Protocol;
+    Mode m_Mode;
     bool m_bInitialMqttConfig;
     bool m_bDebug;
     bool m_bCertLoaded;
@@ -322,6 +334,19 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
   outputDebug(TEXT,args...);
 }
 
+template<typename T,typename ... Args>
+void LiveObjectsBase::addToStringPayload(T val, Args ... args)
+{
+  if(m_Mode == BIN_) m_sPayload+=ToHex(val);
+  else 
+  {
+    m_sPayload+=val;
+    m_sPayload+=';';
+  }
+  
+  addToStringPayload(args...);
+}
+
 extern const String SECRET_LIVEOBJECTS_API_KEY;
 
  /******************************************************************************
@@ -344,9 +369,13 @@ class LiveObjectsNB : public LiveObjectsBase
     LiveObjectsNB(const LiveObjectsNB&)  = delete;
     LiveObjectsNB& operator== (const LiveObjectsNB&) =  delete;
   public:
-    void begin(Protocol p=MQTT, Security s=TLS, bool bDebug=true) override;
+    void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
     void addNetworkInfo() override;
-
+    template<typename T>
+    void addToPayload(const String label, T value);
+    template<typename T>
+    void addToPayload(T value);
+    void sendData();
   private:
     void connectNetwork() override;
     void checkNetwork() override;
@@ -355,7 +384,23 @@ class LiveObjectsNB : public LiveObjectsBase
   private:
   NB m_NBAcces;
   NBScanner m_NBScanner;
+  NB_SMS m_NBSms;
 };
+
+template<typename T>
+inline void LiveObjectsNB::addToPayload(const String label, T value) {
+  if(m_Protocol == MQTT) LiveObjectsBase::addToPayload(label,value);
+  else
+  {
+    addToStringPayload(label,value);
+  }
+}
+template<typename T>
+inline void LiveObjectsNB::addToPayload(T value)
+{
+  addToStringPayload(value);
+}
+
 typedef LiveObjectsNB LiveObjects;
 #endif
 
@@ -380,9 +425,13 @@ class LiveObjectsGSM : public LiveObjectsBase
    LiveObjectsGSM(const LiveObjectsGSM&)  = delete;
    LiveObjectsGSM& operator== (const LiveObjectsGSM&) =  delete;
  public:
-   void begin(Protocol p=MQTT, Security s=TLS, bool bDebug=true) override;
-   void addNetworkInfo() override;
-
+  void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
+  void addNetworkInfo() override;
+  template<typename T>
+  void addToPayload(const String label, T value);
+  template<typename T>
+  void addToPayload(T value);
+  void sendData();
  private:
    void connectNetwork() override;
    void checkNetwork() override;
@@ -392,12 +441,29 @@ class LiveObjectsGSM : public LiveObjectsBase
  GSM m_GSMAcces;
  GPRS m_GPRSAcces;
  GSMScanner m_GSMScanner;
+ GSM_SMS m_GSMSms;
 };
+
+
+template<typename T>
+inline void LiveObjectsGSM::addToPayload(const String label, T value) {
+  if(m_Protocol == MQTT) LiveObjectsBase::addToPayload(label,value);
+  else
+  {
+    addToStringPayload(label,value);
+  }
+}
+template<typename T>
+inline void LiveObjectsGSM::addToPayload(T value)
+{
+  addToStringPayload(value);
+}
 
 typedef LiveObjectsGSM LiveObjects;
 #endif
 
 #if defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
+extern const String SECRET_SERVER_NUMBER;
 extern const String SECRET_PINNUMBER;
 extern const String SECRET_APN;
 extern const String SECRET_APN_USER;
@@ -430,7 +496,7 @@ class LiveObjectsWiFi : public LiveObjectsBase
     LiveObjectsWiFi(const LiveObjectsWiFi&)  = delete;
     LiveObjectsWiFi& operator== (const LiveObjectsWiFi&) =  delete;
   public:
-    void begin(Protocol p=MQTT, Security s=TLS, bool bDebug=true) override;
+    void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
     void addNetworkInfo() override;
   private:
     void connectNetwork() override;

@@ -9,6 +9,7 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_bCertLoaded(false)
     ,m_pClient(nullptr)
     ,m_pMqttclient(nullptr)
+    ,m_sPayload()
 {
 }
 LiveObjectsBase::~LiveObjectsBase()
@@ -252,20 +253,21 @@ void LiveObjectsBase::connect()
   batteryBegin();
   #endif
   connectNetwork();
-  connectMQTT();
+  if(m_Protocol == MQTT) connectMQTT();
+  networkStatus = CONNECTED;
 }
 
 void LiveObjectsBase::networkCheck() {
   unsigned long now = millis();
   if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
     checkNetwork();
-    checkMQTT();
+    if(m_Protocol == MQTT) checkMQTT();
     lastKeepAliveNetwork = now;
   }
 }
 
 void LiveObjectsBase::disconnect() {
-  disconnectMQTT();
+  if(m_Protocol == MQTT) disconnectMQTT();
   disconnectNetwork();
   outputDebug(INFO,"Offline.");
   networkStatus = DISCONNECTED;
@@ -324,14 +326,14 @@ void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload)
 void LiveObjectsBase::loop() {
   if (networkStatus == CONNECTED) {
     networkCheck();
-    m_pMqttclient->poll();
+    if(m_Protocol == MQTT) m_pMqttclient->poll();
   }
 }
 void LiveObjectsBase::setProtocol(Protocol p)
 {
 //TODO
 }
-void LiveObjectsBase::setSecurity(Security s)
+void LiveObjectsBase::setMode(Mode s)
 {
 //TODO
 }
@@ -349,6 +351,12 @@ void LiveObjectsBase::addTimestamp(time_t timestamp)
   char bufer[sizeof("2011-10-08T07:07:09Z")];
   strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
   easyDataPayload["timestamp"]=bufer;
+  if(m_Protocol == SMS)
+  {
+    String s = bufer;
+    addToStringPayload(s);
+  } 
+    
 }
 void LiveObjectsBase::addLocation(double lat, double lon, float alt)
 {
@@ -356,11 +364,17 @@ void LiveObjectsBase::addLocation(double lat, double lon, float alt)
   obj["lat"] = lat;
   obj["lon"] = lon;
   obj["alt"] = alt;
+
+  if(m_Protocol == SMS)
+  {
+    addToStringPayload(lat,lon,alt);
+  }
 }
 
 void LiveObjectsBase::clearPayload()
 {
   easyDataPayload.clear();
+  m_sPayload="";
 }
 
 bool LiveObjectsBase::debugEnabled()
@@ -414,14 +428,23 @@ void LiveObjectsBase::disconnectMQTT()
 void LiveObjectsBase::addPowerStatus()
 {
   #ifdef PMIC_PRESENT
-  JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("powerStatus");
   int DATA = readRegister(SYSTEM_STATUS_REGISTER);
   bool bat = (DATA & (1<<0)) == 0;
   bool usb = (DATA & ((1<<5)|(1<<4))) != 0;
   bool power=(DATA & (1<<2));
-  obj["external_power"] =  usb ? "Yes" : !bat && power ? "Yes" : "No";
-  obj["battery_connected"] = bat ? "Yes" : "No";
-  if(bat) obj["battery_voltage"] = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
+  double voltage = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
+  if(m_Protocol==SMS) addToStringPayload((usb ? 1 : (!bat && power ? 1 : 0)), bat ,( bat ? voltage : 0.));
+  else
+  {
+    JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("powerStatus");
+    obj["external_power"] =  usb ? "Yes" : !bat && power ? "Yes" : "No";
+    obj["battery_connected"] = bat ? "Yes" : "No";
+    if(bat) obj["battery_voltage"] = voltage;
+  }
+  
+  
+
+  
   #endif
 }
 
@@ -439,32 +462,39 @@ LiveObjectsNB::LiveObjectsNB()
   :
    LiveObjectsBase()
   ,m_NBAcces()
+  ,m_NBScanner()
+  ,m_NBSms()
 {}
 
 LiveObjectsNB::~LiveObjectsNB()
 {}
 
-void LiveObjectsNB::begin(Protocol p, Security s, bool bDebug)
+void LiveObjectsNB::begin(Protocol p, Mode s, bool bDebug)
 {
+  m_Protocol=p;
+  m_Mode = s;
   m_bDebug = bDebug;
-  switch(s)
+  if(p==MQTT)
   {
-    case TLS:
-    m_pClient = new NBSSLClient();
-    m_pMqttclient = new MqttClient(m_pClient);
-    m_nPort = 8883;
-    break;
-    case NONE:
-    m_pClient = new NBClient();
-    m_pMqttclient = new MqttClient(m_pClient);
-    m_nPort = 1883;
-    break;
-    default:
-    outputDebug(ERR,"Wrong security type! stopping...");
-    while(true);
+    switch(s)
+    {
+      case TLS:
+      m_pClient = new NBSSLClient();
+      m_pMqttclient = new MqttClient(m_pClient);
+      m_nPort = 8883;
+      break;
+      case NONE:
+      m_pClient = new NBClient();
+      m_pMqttclient = new MqttClient(m_pClient);
+      m_nPort = 1883;
+      break;
+      default:
+      outputDebug(ERR,"Wrong security type! stopping...");
+      while(true);
+    }
+    m_pMqttclient->onMessage(messageCallback);
   }
   m_bInitialized = true;
-  m_pMqttclient->onMessage(messageCallback);
 }
 
 void LiveObjectsNB::connectNetwork()
@@ -525,6 +555,27 @@ void LiveObjectsNB::checkNetwork()
 {
   if(m_NBAcces.status()!= NB_READY)
     connectNetwork();
+
+  if(m_Protocol == SMS)
+  {
+    String msg;
+    if(m_NBSms.available())
+    {
+      int c =0;
+      while(true)
+      {
+        c = m_NBSms.read();
+        if(c==-1)break;
+        msg+=(char)c;
+      }
+      outputDebug(INFO,"Received command: ",msg);
+      LiveObjects_command cmd(msg,nullptr);
+      int index = commands.find(&cmd);
+      if(index >= 0 ) commands[index]->callback("",msg);
+      else outputDebug(INFO,"Unknown command");
+    }
+  }
+  
 }
 
 void LiveObjectsNB::disconnectNetwork()
@@ -540,10 +591,31 @@ void LiveObjectsNB::messageCallback(int msg)
 
 void LiveObjectsNB::addNetworkInfo()
 {
+  String strength=m_NBScanner.getSignalStrength();
+  String carrier = m_NBScanner.getCurrentCarrier();
   JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
   obj["connection_status"] = m_NBAcces.status() == NB_NetworkStatus_t::NB_READY ? "connected":"disconnected";
-  obj["strength"] = m_NBScanner.getSignalStrength();
-  obj["carrier"]=m_NBScanner.getCurrentCarrier();
+  obj["strength"] = strength;
+  obj["carrier"]=carrier;
+
+  if(m_Protocol == SMS) addToStringPayload(m_NBAcces.status() == NB_NetworkStatus_t::NB_READY),strength,carrier);
+}
+
+void LiveObjectsNB::sendData()
+{
+  if(m_Protocol == MQTT) LiveObjectsBase::sendData();
+  else
+  {
+    if(m_sPayload.length() > 130)
+    {
+      outputDebug(ERR,"Payload to big, skipping sending...");
+      return;
+    }
+    m_NBSms.beginSMS(SECRET_SERVER_MSISDN.c_str());
+    m_NBSms.print(m_sPayload);
+    m_NBSms.endSMS();
+    m_sPayload="";
+  }
 }
 
 #endif
@@ -561,26 +633,31 @@ LiveObjectsGSM::LiveObjectsGSM()
 LiveObjectsGSM::~LiveObjectsGSM()
 {}
 
-void LiveObjectsGSM::begin(Protocol p, Security s, bool bDebug)
+void LiveObjectsGSM::begin(Protocol p, Mode s, bool bDebug)
 {
  m_bDebug = bDebug;
- switch(s)
+ m_Protocol=p;
+ m_Mode = s;
+ if(p == MQTT)
  {
-   case TLS:
-   m_pClient = new GSMSSLClient();
-   m_pMqttclient = new MqttClient(m_pClient);
-   m_nPort = 8883;
-   break;
-   case NONE:
-   m_pClient = new GSMClient();
-   m_pMqttclient = new MqttClient(m_pClient);
-   m_nPort = 1883;
-   break;
-   default:
-   outputDebug(ERR, "Wrong security type!");
+  switch(s)
+  {
+    case TLS:
+    m_pClient = new GSMSSLClient();
+    m_pMqttclient = new MqttClient(m_pClient);
+    m_nPort = 8883;
+    break;
+    case NONE:
+    m_pClient = new GSMClient();
+    m_pMqttclient = new MqttClient(m_pClient);
+    m_nPort = 1883;
+    break;
+    default:
+    outputDebug(ERR, "Wrong security type!");
+  }
+  m_pMqttclient->onMessage(messageCallback);
  }
  m_bInitialized = true;
- m_pMqttclient->onMessage(messageCallback);
 }
 
 void LiveObjectsGSM::connectNetwork()
@@ -643,6 +720,45 @@ void LiveObjectsGSM::checkNetwork()
 {
  if(m_GSMAcces.status()!= GSM_READY)
    connectNetwork();
+
+  if(m_Protocol == SMS)
+  {
+    String msg;
+    if(m_GSMSms.available())
+    {
+      int c =0;
+      while(true)
+      {
+        c = m_GSMSms.read();
+        if(c==-1)break;
+        msg+=(char)c;
+      }
+      outputDebug(INFO,"Received command: ",msg);
+      LiveObjects_command cmd(msg,nullptr);
+      int index = commands.find(&cmd);
+      if(index >= 0 ) commands[index]->callback("",msg);
+      else outputDebug(INFO,"Unknown command");
+    }
+  }
+}
+
+
+
+void LiveObjectsGSM::sendData()
+{
+  if(m_Protocol == MQTT) LiveObjectsBase::sendData();
+  else
+  {
+    if(m_sPayload.length() > 130)
+    {
+      outputDebug(ERR,"Payload to big, skipping sending...");
+      return;
+    }
+    m_GSMSms.beginSMS(SECRET_SERVER_MSISDN.c_str());
+    m_GSMSms.print(m_sPayload);
+    m_GSMSms.endSMS();
+    m_sPayload="";
+  }
 }
 
 void LiveObjectsGSM::disconnectNetwork()
@@ -658,10 +774,22 @@ void LiveObjectsGSM::messageCallback(int msg)
 
 void LiveObjectsGSM::addNetworkInfo()
 {
- JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
+ 
+
+String strength=m_GSMScanner.getSignalStrength();
+String carrier = m_GSMScanner.getCurrentCarrier();
+JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
  obj["connection_status"] = m_GSMAcces.status() == GSM_READY ? "connected":"disconnected";
  obj["strength"] = m_GSMScanner.getSignalStrength();
  obj["carrier"]=m_GSMScanner.getCurrentCarrier();
+if(m_Protocol == SMS)
+{
+ addToStringPayload(m_GSMAcces.status() == GSM3_NetworkStatus_t::GSM_READY);
+ addToStringPayload(strength);
+ addToStringPayload(carrier);
+}
+
+                                    
 }
 
 #endif
@@ -682,9 +810,16 @@ LiveObjectsWiFi::~LiveObjectsWiFi()
 
 
 
-void LiveObjectsWiFi::begin(Protocol p, Security s, bool bDebug)
+void LiveObjectsWiFi::begin(Protocol p, Mode s, bool bDebug)
 {
   m_bDebug = bDebug;
+  m_Protocol=p;
+  m_Mode = s;
+  if(p == SMS)
+  {
+    outputDebug(ERR,"Wrong protocol! This board support only MQTT! Stopping....")
+    while(true);
+  } 
   switch(s)
   {
     case TLS:
