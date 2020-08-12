@@ -1,8 +1,5 @@
 #pragma once
 
-
-#define ARDUINO_SAMD_MKRGSM1400
-
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
@@ -392,7 +389,8 @@ inline void LiveObjectsNB::addToPayload(const String label, T value) {
   if(m_Protocol == MQTT) LiveObjectsBase::addToPayload(label,value);
   else
   {
-    addToStringPayload(label,value);
+    outputDebug(WARN,"SMS protocol active, sending only value, label skipped...");
+    addToStringPayload(value);
   }
 }
 template<typename T>
@@ -450,12 +448,17 @@ inline void LiveObjectsGSM::addToPayload(const String label, T value) {
   if(m_Protocol == MQTT) LiveObjectsBase::addToPayload(label,value);
   else
   {
-    addToStringPayload(label,value);
+    outputDebug(WARN,"SMS protocol active, sending only value, label skipped...");
+    addToStringPayload(value);
   }
 }
 template<typename T>
 inline void LiveObjectsGSM::addToPayload(T value)
 {
+  if(m_Mode==TXT)
+  {
+    outputDebug(WARN, "Skipping addToPayload, TXT mode requires value with label try lo.addToPayload(\"name\",value)"); 
+  } 
   addToStringPayload(value);
 }
 
@@ -463,7 +466,7 @@ typedef LiveObjectsGSM LiveObjects;
 #endif
 
 #if defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
-extern const String SECRET_SERVER_NUMBER;
+extern const String SECRET_SERVER_MSISDN;
 extern const String SECRET_PINNUMBER;
 extern const String SECRET_APN;
 extern const String SECRET_APN_USER;

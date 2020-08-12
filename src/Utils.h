@@ -93,12 +93,9 @@ String ToHexT(T val)
   data.input = val;
   String ret;
   char buff[5];
-  uint8_t foo;
-  //std::cout<<data.output<<std::endl;
   for(int i=0,e=sizeof(data.input);i<e;++i)
   {
     uint8_t x = (uint8_t)((data.output>>((e-1-i)*8)));
-    //std::cout<<(int)x<<std::endl;
     if(x<16) ret+='0';
     memset(buff,'\0',5);
     itoa(x,buff,16);
@@ -120,12 +117,9 @@ String ToHexTU(T val)
   data.input = val;
   String ret;
   char buff[5];
-  uint8_t foo;
-  //std::cout<<data.output<<std::endl;
   for(int i=0,e=sizeof(data.input);i<e;++i)
   {
     uint8_t x = (uint8_t)((data.output>>((e-1-i)*8)));
-    //std::cout<<(int)x<<std::endl;
     if(x<16) ret+='0';
     memset(buff,'\0',5);
     itoa(x,buff,16);
