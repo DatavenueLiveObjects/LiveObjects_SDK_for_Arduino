@@ -1,7 +1,13 @@
 #pragma once
 #include <Wire.h>
 
+/*******************************************************************************
+ * 
+ *                  Linked List
+ * 
+ * ****************************************************************************/
 typedef uint8_t byte;
+
 template<typename T>
 class ListNode
 {
@@ -20,7 +26,7 @@ class LinkedList
     LinkedList(): m_nSize(0), head(nullptr), tail(nullptr){}
     ~LinkedList();
   public:
-    void push(T* element);
+    bool push(T* element);
     int size();
     int find(T* element);
     T* operator[](size_t index);
@@ -50,10 +56,15 @@ int LinkedList<T>::size()
 }
 
 template<typename T>
-void LinkedList<T>::push(T* element)
+bool LinkedList<T>::push(T* element)
 {
-  tail = new ListNode<T>(element, tail);
-  m_nSize++;
+  if(find(element) == -1)
+  {
+    tail = new ListNode<T>(element, tail);
+    m_nSize++;
+    return true;
+  }
+  return false;
 }
 
 template<typename T>
@@ -80,6 +91,14 @@ int LinkedList<T>::find(T* element)
 
 
 }
+
+
+
+/*******************************************************************************
+ * 
+ *                  Hex converter
+ * 
+ * ****************************************************************************/
 template<typename T>
 String ToHexT(T val)
 {
@@ -142,9 +161,11 @@ String ToHex(unsigned long long x);
 String ToHex(uint8_t x);
 
 
-/******************************************************************************
-   PMIC constants
- ******************************************************************************/
+/*******************************************************************************
+ * 
+ *                  PMIC CONSTANTS
+ * 
+ * ****************************************************************************/
 
 #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRGSM1400 || defined ARDUINO_SAMD_MKRNB1500
 #define PMIC_ADDRESS 0x6B

@@ -52,7 +52,7 @@ enum LiveObjects_networkStatus
 enum LiveObjects_parameterType {
   INTEGER,
   UNSIGNED_INTEGER,
-  BINARY,
+  BINR,
   STRING,
   DECIMAL,
   IMPLICIT
@@ -85,7 +85,7 @@ enum Mode
 {
   NONE
   ,TLS
-  ,BIN_
+  ,BINARY
   ,TXT
   //,DTLS
 };
@@ -216,6 +216,14 @@ public:
     void updateParameter(const LiveObjects_parameter param, LOtF* ptr, const JsonDocument& configIn, JsonDocument& configOut);
     template<typename LOtH>
     void addToPayload(const String label, LOtH value);
+    template<typename T>
+    void addToPayload(T val);
+protected:
+    template<typename T, typename E, typename ... Args>
+    void addToPayload(JsonObject obj, T key, E val, Args ... args);
+    void addToPayload(JsonObject obj){};
+    template<typename T, typename E, typename R, typename ... Args>
+    void addToPayload(T key, E val, R tmp , Args ... args);
 /******************************************************************************
    OBJECTS
 ******************************************************************************/
@@ -287,7 +295,7 @@ inline void LiveObjectsBase::addParameter(const String name, LOtD &variable, onP
 
 template<typename LOtE>
 inline void LiveObjectsBase::addTypedParam(const String name, LOtE *variable, LiveObjects_parameterType type, LiveObjects_variableType variableType, onParameterUpdateCallback callback) {
-  parameters.push(new LiveObjects_parameter(name, variable, type, variableType, callback));
+  if(!parameters.push(new LiveObjects_parameter(name, variable, type, variableType, callback))) outputDebug(ERR, "Parameter ",name," already exists, skipping...");
 }
 
 template<typename LOtF>
@@ -299,7 +307,32 @@ inline void LiveObjectsBase::updateParameter(const LiveObjects_parameter param, 
 
 template<typename LOtH>
 inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
-  easyDataPayload[JSONVALUE][label] = value;
+  if(m_Protocol == MQTT) easyDataPayload[JSONVALUE][label] = value;
+  else
+  {
+    outputDebug(WARN,"SMS protocol active, sending only value, label skipped...");
+    addToStringPayload(value);
+  }
+}
+
+template<typename T>
+inline void LiveObjectsBase::addToPayload(T value)
+{
+  if(m_Protocol == MQTT) outputDebug(ERR, "Odd number of parameters in addToPayload!");
+  addToStringPayload(value);
+}
+
+template<typename T, typename E, typename R, typename ... Args>
+inline void LiveObjectsBase::addToPayload(T key, E val,R tmp, Args ... args)
+{
+  if(m_Protocol == MQTT) addToPayload(key,val);
+  addToPayload(tmp, args...); 
+}
+template<typename T, typename E, typename ... Args>
+inline void LiveObjectsBase::addToPayload(JsonObject obj, T key, E val, Args ... args)
+{
+  obj[key]=val;
+  addToPayload(obj,args...);
 }
 
 template<typename T, typename ... Args>
@@ -334,7 +367,7 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
 template<typename T,typename ... Args>
 void LiveObjectsBase::addToStringPayload(T val, Args ... args)
 {
-  if(m_Mode == BIN_) m_sPayload+=ToHex(val);
+  if(m_Mode == Mode::BINARY) m_sPayload+=ToHex(val);
   else 
   {
     m_sPayload+=val;
@@ -347,31 +380,32 @@ void LiveObjectsBase::addToStringPayload(T val, Args ... args)
 extern const String SECRET_LIVEOBJECTS_API_KEY;
 
  /******************************************************************************
-   NB LTE BOARDS CLASS
+   Cellular BOARDS CLASS
  ******************************************************************************/
 #if defined ARDUINO_SAMD_MKRNB1500
+#define NBD
 #include <MKRNB.h>
-
-class LiveObjectsNB : public LiveObjectsBase
+#elif defined ARDUINO_SAMD_MKRGSM1400
+#define GSMD
+#include <MKRGSM.h>
+#endif
+#if defined NBD || defined GSMD
+class LiveObjectsCellular : public LiveObjectsBase
 {
   public:
-    static LiveObjectsNB& get()
+    static LiveObjectsCellular& get()
     {
-      static LiveObjectsNB g; return g;
+      static LiveObjectsCellular g; return g;
     }
 
   private:
-    LiveObjectsNB();
-    ~LiveObjectsNB();
-    LiveObjectsNB(const LiveObjectsNB&)  = delete;
-    LiveObjectsNB& operator== (const LiveObjectsNB&) =  delete;
+    LiveObjectsCellular();
+    ~LiveObjectsCellular();
+    LiveObjectsCellular(const LiveObjectsCellular&)  = delete;
+    LiveObjectsCellular& operator== (const LiveObjectsCellular&) =  delete;
   public:
     void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
     void addNetworkInfo() override;
-    template<typename T>
-    void addToPayload(const String label, T value);
-    template<typename T>
-    void addToPayload(T value);
     void sendData();
   private:
     void connectNetwork() override;
@@ -379,99 +413,29 @@ class LiveObjectsNB : public LiveObjectsBase
     void disconnectNetwork() override;
     static void messageCallback(int msg);
   private:
-  NB m_NBAcces;
-  NBScanner m_NBScanner;
-  NB_SMS m_NBSms;
+  #ifdef NBD
+  NB m_Acces;
+  NBScanner m_Scanner;
+  NB_SMS m_Sms;
+  #endif
+  #ifdef GSMD
+  GSM m_Acces;
+  GPRS m_GPRSAcces;
+  GSMScanner m_Scanner;
+  GSM_SMS m_Sms;
+  #endif
 };
 
-template<typename T>
-inline void LiveObjectsNB::addToPayload(const String label, T value) {
-  if(m_Protocol == MQTT) LiveObjectsBase::addToPayload(label,value);
-  else
-  {
-    outputDebug(WARN,"SMS protocol active, sending only value, label skipped...");
-    addToStringPayload(value);
-  }
-}
-template<typename T>
-inline void LiveObjectsNB::addToPayload(T value)
-{
-  addToStringPayload(value);
-}
+typedef LiveObjectsCellular LiveObjects;
 
-typedef LiveObjectsNB LiveObjects;
-#endif
-
-
-/******************************************************************************
-  GSM LTE BOARDS CLASS
-******************************************************************************/
-#if defined ARDUINO_SAMD_MKRGSM1400
-#include <MKRGSM.h>
-
-class LiveObjectsGSM : public LiveObjectsBase
-{
- public:
-   static LiveObjectsGSM& get()
-   {
-     static LiveObjectsGSM g; return g;
-   }
-
- private:
-   LiveObjectsGSM();
-   ~LiveObjectsGSM();
-   LiveObjectsGSM(const LiveObjectsGSM&)  = delete;
-   LiveObjectsGSM& operator== (const LiveObjectsGSM&) =  delete;
- public:
-  void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
-  void addNetworkInfo() override;
-  template<typename T>
-  void addToPayload(const String label, T value);
-  template<typename T>
-  void addToPayload(T value);
-  void sendData();
- private:
-   void connectNetwork() override;
-   void checkNetwork() override;
-   void disconnectNetwork() override;
-   static void messageCallback(int msg);
- private:
- GSM m_GSMAcces;
- GPRS m_GPRSAcces;
- GSMScanner m_GSMScanner;
- GSM_SMS m_GSMSms;
-};
-
-
-template<typename T>
-inline void LiveObjectsGSM::addToPayload(const String label, T value) {
-  if(m_Protocol == MQTT) LiveObjectsBase::addToPayload(label,value);
-  else
-  {
-    outputDebug(WARN,"SMS protocol active, sending only value, label skipped...");
-    addToStringPayload(value);
-  }
-}
-template<typename T>
-inline void LiveObjectsGSM::addToPayload(T value)
-{
-  if(m_Mode==TXT)
-  {
-    outputDebug(WARN, "Skipping addToPayload, TXT mode requires value with label try lo.addToPayload(\"name\",value)"); 
-  } 
-  addToStringPayload(value);
-}
-
-typedef LiveObjectsGSM LiveObjects;
-#endif
-
-#if defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 extern const String SECRET_SERVER_MSISDN;
 extern const String SECRET_PINNUMBER;
 extern const String SECRET_APN;
 extern const String SECRET_APN_USER;
 extern const String SECRET_APN_PASS;
 #endif
+
+
 
 /******************************************************************************
   WIFI BOARDS CLASS
