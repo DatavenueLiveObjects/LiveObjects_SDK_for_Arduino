@@ -1,6 +1,12 @@
 #include "Utils.h"
 #include <Arduino.h>
 
+
+/*******************************************************************************
+ * 
+ *                  PMIC FUNCTIONS
+ * 
+ * ****************************************************************************/
 byte readRegister(byte address) {
     Wire.beginTransmission(PMIC_ADDRESS);
     Wire.write(address);
@@ -28,6 +34,13 @@ void batteryBegin()
   }
 }
 
+
+
+/*******************************************************************************
+ * 
+ *                  Hex converter
+ * 
+ * ****************************************************************************/
 String ToHex(String x)
 {
   String hex;

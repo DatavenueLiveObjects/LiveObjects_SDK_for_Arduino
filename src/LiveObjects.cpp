@@ -7,18 +7,8 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_bInitialized(false)
     ,m_bInitialMqttConfig(false)
     ,m_bCertLoaded(false)
-    ,m_pClient(nullptr)
-    ,m_pMqttclient(nullptr)
     ,m_sPayload()
-{
-}
-LiveObjectsBase::~LiveObjectsBase()
-{
-  if(m_pMqttclient != nullptr)delete m_pMqttclient;
-  if(m_pClient != nullptr)delete m_pClient;
-}
-
-
+{}
 /******************************************************************************
    PARAM TYPERS
  ******************************************************************************/
@@ -47,12 +37,12 @@ void LiveObjectsBase::paramTyper(const String& name, int8_t*variable, LiveObject
   else
     addTypedParam(name, variable, type, T_INT8, callback);
 }
-void LiveObjectsBase::paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
-  if (type == IMPLICIT)
-    addTypedParam(name, variable, INTEGER, T_INT16, callback);
-  else
-    addTypedParam(name, variable, type, T_INT16, callback);
-}
+// void LiveObjectsBase::paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+//   if (type == IMPLICIT)
+//     addTypedParam(name, variable, INTEGER, T_INT16, callback);
+//   else
+//     addTypedParam(name, variable, type, T_INT16, callback);
+// }
 void LiveObjectsBase::paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT32, callback);
@@ -71,12 +61,12 @@ void LiveObjectsBase::paramTyper(const String& name, uint8_t* variable, LiveObje
   else
     addTypedParam(name, variable, type, T_UINT8, callback);
 }
-void LiveObjectsBase::paramTyper(const String& name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
-  if (type == IMPLICIT)
-    addTypedParam(name, variable, UNSIGNED_INTEGER, T_UINT16, callback);
-  else
-    addTypedParam(name, variable, type, T_UINT16, callback);
-}
+// void LiveObjectsBase::paramTyper(const String& name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+//   if (type == IMPLICIT)
+//     addTypedParam(name, variable, UNSIGNED_INTEGER, T_UINT16, callback);
+//   else
+//     addTypedParam(name, variable, type, T_UINT16, callback);
+// }
 void LiveObjectsBase::paramTyper(const String& name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, UNSIGNED_INTEGER, T_UINT32, callback);
@@ -149,11 +139,289 @@ void LiveObjectsBase::ptrTyper(const LiveObjects_parameter param, const JsonDocu
 }
 
 
-/******************************************************************************
-   CONFIGURATION MANAGER
- ******************************************************************************/
+void LiveObjectsBase::addCommand(const String name, onCommandCallback callback) {
+  if(!commands.push(new LiveObjects_command(name, callback))) outputDebug(ERR, "Command ",name," already exists, skipping....");
+}
 
-void LiveObjectsBase::configurationManager(int messageSize) {
+void LiveObjectsBase::connect()
+{
+  #ifdef PMIC_PRESENT
+  batteryBegin();
+  #endif
+  connectNetwork();
+  if(m_Protocol == MQTT) connectMQTT();
+  networkStatus = CONNECTED;
+}
+
+void LiveObjectsBase::networkCheck() {
+  unsigned long now = millis();
+  if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
+    checkNetwork();
+    if(m_Protocol == MQTT) checkMQTT();
+    lastKeepAliveNetwork = now;
+  }
+}
+
+void LiveObjectsBase::disconnect() {
+  if(m_Protocol == MQTT) disconnectMQTT();
+  disconnectNetwork();
+  outputDebug(INFO,"Offline.");
+  networkStatus = DISCONNECTED;
+}
+
+
+void LiveObjectsBase::sendData() {
+
+  easyDataPayload[JSONMODEL] = JSONMODELNAME;
+  publishMessage(MQTT_PUBDATA, easyDataPayload);
+  easyDataPayload.clear();
+
+}
+
+void LiveObjectsBase::sendData(const String customPayload) {
+  StaticJsonDocument<PAYLOAD_DATA_SIZE> payload;
+  deserializeJson(payload, customPayload);
+  if (!payload.containsKey(JSONMODEL))
+    payload[JSONMODEL] = JSONMODELNAME;
+  publishMessage(MQTT_PUBDATA, payload);
+}
+
+
+void LiveObjectsBase::loop() {
+  if (networkStatus == CONNECTED) {
+    networkCheck();
+  }
+}
+void LiveObjectsBase::setProtocol(Protocol p)
+{
+//TODO
+}
+void LiveObjectsBase::setMode(Mode s)
+{
+//TODO
+}
+void LiveObjectsBase::enableDebug(bool b)
+{
+  m_bDebug = b;
+}
+void LiveObjectsBase::setClientID(const String id)
+{
+  m_sMqttid = id;
+}
+void LiveObjectsBase::addTimestamp(time_t timestamp)
+{
+  timestamp-=504921600;
+  char bufer[sizeof("2011-10-08T07:07:09Z")];
+  strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
+  if(m_Protocol == SMS)
+  {
+    String s = bufer;
+    addToStringPayload(s);
+  }
+  else easyDataPayload["timestamp"]=bufer;
+  
+    
+}
+void LiveObjectsBase::addLocation(double lat, double lon, float alt)
+{
+  if(m_Protocol == SMS) addToStringPayload(lat,lon,alt);
+  else addToPayload(easyDataPayload.createNestedObject("location"),"lat",lat,"lon",lon,"alt",alt);
+}
+
+void LiveObjectsBase::clearPayload()
+{
+  easyDataPayload.clear();
+  m_sPayload="";
+}
+
+bool LiveObjectsBase::debugEnabled()
+{
+  return m_bDebug;
+}
+
+#if defined ARDUINO_ARCH_AVR
+
+LiveObjectsAVR::LiveObjectsAVR()
+    :
+    m_serialFona(FONA_TX, FONA_RX),
+    m_Fona()
+{}
+
+void LiveObjectsAVR::begin(Protocol p, Mode m, bool debug)
+{
+  m_Protocol = p;
+  m_Mode = m;
+  m_bDebug=debug;
+  if(m==NONE)m_nPort=1883;
+  else m_nPort=8883;
+
+
+  //Set reset pin to default state
+  pinMode(FONA_RST, OUTPUT);
+  digitalWrite(FONA_RST, HIGH);
+  pinMode(FONA_PWRKEY, OUTPUT);
+
+  //Power on Module
+  digitalWrite(FONA_PWRKEY, LOW);
+  delay(100); // For SIM7000
+  digitalWrite(FONA_PWRKEY, HIGH);
+
+  outputDebug(INFO, "Setting baudrate 9600");
+  m_serialFona.begin(9600); // Default SIM7000 shield baud rate
+  m_serialFona.println("AT+IPR=9600"); // Set baud rate
+  delay(100); // Short pause to let the command run
+  m_serialFona.begin(9600);
+  if (!m_Fona.begin(m_serialFona)) {
+    outputDebug(ERR,"Cannot find FONA");
+    while(1); // Don't proceed if it couldn't find the device
+  }
+
+  String f;
+  switch (m_Fona.type()) {
+    case SIM800L:
+      f= "SIM800L"; break;
+    case SIM800H:
+      f= "SIM800H"; break;
+    case SIM808_V1:
+      f="SIM808 (v1)"; break;
+    case SIM808_V2:
+      f="SIM808 (v2)"; break;
+    case SIM5320A:
+      f="SIM5320A (American)"; break;
+    case SIM5320E:
+      f="SIM5320E (European)"; break;
+    case SIM7000A:
+      f="SIM7000A (American)"; break;
+    case SIM7000C:
+      f="SIM7000C (Chinese)"; break;
+    case SIM7000E:
+      f="SIM7000E (European)"; break;
+    case SIM7000G:
+      f="SIM7000G (Global)"; break;
+    case SIM7500A:
+      f="SIM7500A (American)"; break;
+    case SIM7500E:
+      f="SIM7500E (European)"; break;
+    default:
+      f="???"; break;
+  }
+  outputDebug(INFO,"Fona is OK, found model: ",f);
+  
+  // Print module IMEI number.
+  char tab[20];
+  while(m_Fona.getIMEI(tab)<1);
+  m_sMqttid = tab;
+  outputDebug(INFO,"IMEI: ",m_sMqttid);
+
+  m_Fona.setFunctionality(1);
+}
+
+void LiveObjectsAVR::checkNetwork()
+{
+  int n = m_Fona.getNetworkStatus();
+  outputDebug(ERR,n);
+  if (n == 0) outputDebug(INFO,"Network status: Not registered");
+  else if (n == 1) outputDebug(INFO,"Network status: Registered (home)");
+  else if (n == 2) outputDebug(INFO,"Network status: Not registered (searching)");
+  else if (n == 3) outputDebug(INFO,"Network status: Denied");
+  else if (n == 4) outputDebug(INFO,"Network status: Unknown");
+  else if (n == 5) outputDebug(INFO,"Network status: Registered roaming");
+  if (n!=1 && n!=5)
+  {
+    delay(2000);
+    connectNetwork();
+  } 
+  
+  // if(networkStatus==CONNECTED)
+  // {
+  //   while(m_Fona.available()) m_sMessage += (char)m_Fona.read();
+  //   if(m_sMessage.length()>0)
+  //   {
+  //     outputDebug(INFO, "Received message: ",m_sMessage);
+  //     m_sMessage="";
+  //   }
+  // }
+}
+
+void LiveObjectsAVR::connectNetwork()
+{
+  outputDebug(INFO, "Connecting to cellular network");
+  checkNetwork();
+  outputDebug(INFO, "Connected!");
+  outputDebug(INFO, "Connecting to internet");
+  if (!m_Fona.wirelessConnStatus()) 
+  {
+    while (!m_Fona.openWirelessConnection(true)) 
+    {
+      outputDebug(TEXT,".");
+      delay(2000); // Retry every 2s
+    }
+  }
+  outputDebug(INFO, "Connected!");
+}
+
+void LiveObjectsAVR::checkMQTT()
+{
+  if(!m_Fona.MQTT_connectionStatus())
+    connectMQTT();
+}
+void LiveObjectsAVR::connectMQTT()
+{
+  if(!m_Fona.MQTT_connectionStatus())
+  {
+    m_Fona.MQTT_setParameter("URL", MQTT_BROKER, m_nPort);
+    // Set up MQTT username and password if necessary
+    m_Fona.MQTT_setParameter("USERNAME", MQTT_USER);
+    m_Fona.MQTT_setParameter("PASSWORD", SECRET_LIVEOBJECTS_API_KEY.c_str());
+    m_Fona.MQTT_setParameter("CLIENTID",m_sMqttid.c_str());
+    //fona.MQTTsetParameter("KEEPTIME", 30); // Time to connect to server, 60s by default
+    
+    outputDebug(INFO,"Connecting to MQTT broker ", MQTT_BROKER, m_nPort);
+    while (! m_Fona.MQTT_connect(true)) {
+      outputDebug(TEXT,".");
+    }
+    outputDebug(INFO, "You are connected to mqtt broker");
+
+    m_Fona.MQTT_subscribe(MQTT_SUBCFG,0);
+    m_Fona.MQTT_subscribe(MQTT_SUBCMD,0);
+  }
+}
+void LiveObjectsAVR::disconnectMQTT()
+{
+
+}
+
+void LiveObjectsAVR::disconnectNetwork()
+{
+
+}
+
+void LiveObjectsAVR::addNetworkInfo()
+{
+
+}
+
+void LiveObjectsAVR::addPowerStatus()
+{
+
+}
+
+void LiveObjectsAVR::onMQTTmessage(int messageSize)
+{
+
+}
+
+void LiveObjectsAVR::publishMessage(const String& topic, JsonDocument& payload)
+{
+  String s;
+  outputDebug(INFO,"Publishing message on topic: ", topic);
+  serializeJsonPretty(payload,Serial);
+  serializeJson(payload,s);
+  while(!m_Fona.MQTT_publish(topic.c_str(),s.c_str(),s.length(),0,0)) outputDebug(WARN,"Failed to send message, retrying...");
+}
+#elif defined ARDUINO_ARCH_SAMD
+
+void LiveObjectsSAMD::configurationManager(int messageSize) {
   StaticJsonDocument<PAYLOAD_DATA_SIZE> configOut;
   if (messageSize >= 0)
   { // config update received
@@ -213,15 +481,23 @@ void LiveObjectsBase::configurationManager(int messageSize) {
   }
 }
 
+LiveObjectsSAMD::LiveObjectsSAMD()
+    :
+    LiveObjectsBase()
+    ,m_pClient(nullptr)
+    ,m_pMqttclient(nullptr)
+{}
+
+LiveObjectsSAMD::~LiveObjectsSAMD()
+{
+  if(m_pMqttclient != nullptr)delete m_pMqttclient;
+  if(m_pClient != nullptr)delete m_pClient;
+}
+
 /******************************************************************************
    COMMAND MANAGEMENT
  ******************************************************************************/
-
-void LiveObjectsBase::addCommand(const String name, onCommandCallback callback) {
-  if(!commands.push(new LiveObjects_command(name, callback))) outputDebug(ERR, "Command ",name," already exists, skipping....");
-}
-
-void LiveObjectsBase::commandManager() {
+void LiveObjectsSAMD::commandManager() {
   StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdIn;
   StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdOut;
   deserializeJson(cmdIn, *m_pMqttclient);
@@ -244,40 +520,10 @@ void LiveObjectsBase::commandManager() {
 }
 
 /******************************************************************************
-   CONNECTION MANAGER
- ******************************************************************************/
-
-void LiveObjectsBase::connect()
-{
-  #ifdef PMIC_PRESENT
-  batteryBegin();
-  #endif
-  connectNetwork();
-  if(m_Protocol == MQTT) connectMQTT();
-  networkStatus = CONNECTED;
-}
-
-void LiveObjectsBase::networkCheck() {
-  unsigned long now = millis();
-  if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
-    checkNetwork();
-    if(m_Protocol == MQTT) checkMQTT();
-    lastKeepAliveNetwork = now;
-  }
-}
-
-void LiveObjectsBase::disconnect() {
-  if(m_Protocol == MQTT) disconnectMQTT();
-  disconnectNetwork();
-  outputDebug(INFO,"Offline.");
-  networkStatus = DISCONNECTED;
-}
-
-/******************************************************************************
    MQTT FUNCTIONS
  ******************************************************************************/
 
-void LiveObjectsBase::onMQTTmessage(int messageSize) {
+void LiveObjectsSAMD::onMQTTmessage(int messageSize) {
   String topic = m_pMqttclient->messageTopic();
   outputDebug(INFO,"Received a message on topic: ", topic);
 
@@ -287,23 +533,7 @@ void LiveObjectsBase::onMQTTmessage(int messageSize) {
     commandManager();
 }
 
-void LiveObjectsBase::sendData() {
-
-  easyDataPayload[JSONMODEL] = JSONMODELNAME;
-  publishMessage(MQTT_PUBDATA, easyDataPayload);
-  easyDataPayload.clear();
-
-}
-
-void LiveObjectsBase::sendData(const String customPayload) {
-  StaticJsonDocument<PAYLOAD_DATA_SIZE> payload;
-  deserializeJson(payload, customPayload);
-  if (!payload.containsKey(JSONMODEL))
-    payload[JSONMODEL] = JSONMODELNAME;
-  publishMessage(MQTT_PUBDATA, payload);
-}
-
-void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload) {
+void LiveObjectsSAMD::publishMessage(const String& topic, JsonDocument& payload) {
   outputDebug(INFO,"Publishing message on topic: ", topic);
   if(m_bDebug)
   {
@@ -325,65 +555,13 @@ void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload)
    LIVE OBJECTS
  ******************************************************************************/
 
-void LiveObjectsBase::loop() {
-  if (networkStatus == CONNECTED) {
-    networkCheck();
-    if(m_Protocol == MQTT) m_pMqttclient->poll();
-  }
-}
-void LiveObjectsBase::setProtocol(Protocol p)
-{
-//TODO
-}
-void LiveObjectsBase::setMode(Mode s)
-{
-//TODO
-}
-void LiveObjectsBase::enableDebug(bool b)
-{
-  m_bDebug = b;
-}
-void LiveObjectsBase::setClientID(const String id)
-{
-  m_sMqttid = id;
-}
-void LiveObjectsBase::addTimestamp(time_t timestamp)
-{
-  timestamp-=504921600;
-  char bufer[sizeof("2011-10-08T07:07:09Z")];
-  strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
-  if(m_Protocol == SMS)
-  {
-    String s = bufer;
-    addToStringPayload(s);
-  }
-  else easyDataPayload["timestamp"]=bufer;
-  
-    
-}
-void LiveObjectsBase::addLocation(double lat, double lon, float alt)
-{
-  if(m_Protocol == SMS) addToStringPayload(lat,lon,alt);
-  else addToPayload(easyDataPayload.createNestedObject("location"),"lat",lat,"lon",lon,"alt",alt);
-}
-
-void LiveObjectsBase::clearPayload()
-{
-  easyDataPayload.clear();
-  m_sPayload="";
-}
-
-bool LiveObjectsBase::debugEnabled()
-{
-  return m_bDebug;
-}
-
-void LiveObjectsBase::checkMQTT()
+void LiveObjectsSAMD::checkMQTT()
 {
   if(!m_pMqttclient->connected())
     connectMQTT();
+  m_pMqttclient->poll();
 }
-void LiveObjectsBase::connectMQTT()
+void LiveObjectsSAMD::connectMQTT()
 {
   if (SECRET_LIVEOBJECTS_API_KEY.length() != 32) // check if API key seems correct
   {
@@ -414,22 +592,22 @@ void LiveObjectsBase::connectMQTT()
   }
 
 }
-void LiveObjectsBase::disconnectMQTT()
+void LiveObjectsSAMD::disconnectMQTT()
 {
   outputDebug(INFO,"Closing MQTT connection...");
   m_pMqttclient->stop();
 }
 
-void LiveObjectsBase::addPowerStatus()
+void LiveObjectsSAMD::addPowerStatus()
 {
   #ifdef PMIC_PRESENT
   int DATA = readRegister(SYSTEM_STATUS_REGISTER);
-  bool bat = (DATA & (1<<0)) == 0;
-  bool usb = (DATA & ((1<<5)|(1<<4))) != 0;
+  bool bat = (DATA & (1<<0 == 0));
+  bool usb = (DATA & ((1<<5)|(1<<4) != 0));
   bool power=(DATA & (1<<2));
   double voltage=0.;
   if(bat) voltage = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
-  if(m_Protocol==SMS) addToStringPayload((usb ? 1 : (!bat && power ? 1 : 0)), bat ,( bat ? voltage : 0.));
+  if(m_Protocol==SMS) addToStringPayload((usb ? 1 : (!bat && power ? 1 : 0, bat ,( bat ? voltage : 0.))));
   else
   {
     addToPayload(easyDataPayload[JSONVALUE].createNestedObject("powerStatus"),
@@ -452,7 +630,7 @@ void LiveObjectsBase::addPowerStatus()
 #if defined NBD || defined GSMD
 LiveObjectsCellular::LiveObjectsCellular()
   :
-   LiveObjectsBase()
+   LiveObjectsSAMD()
   ,m_Acces()
   ,m_Scanner()
   ,m_Sms()
@@ -633,7 +811,7 @@ void LiveObjectsCellular::addNetworkInfo()
 
 void LiveObjectsCellular::sendData()
 {
-  if(m_Protocol == MQTT) LiveObjectsBase::sendData();
+  if(m_Protocol == MQTT) LiveObjectsSAMD::sendData();
   else
   {
     if(m_sPayload.length() > 130)
@@ -653,7 +831,6 @@ void LiveObjectsCellular::sendData()
     m_sPayload="";
   }
 }
-
 #endif
 
  /******************************************************************************
@@ -662,7 +839,7 @@ void LiveObjectsCellular::sendData()
 #ifdef WIFI
 LiveObjectsWiFi::LiveObjectsWiFi()
   :
-   LiveObjectsBase()
+   LiveObjectsSAMD()
    ,m_sMac()
    ,m_sIP()
 {
@@ -783,5 +960,7 @@ void LiveObjectsWiFi::addNetworkInfo()
   addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"mac",m_sMac,"ssid",SECRET_SSID,"ip",m_sIP,"strength",tmp);
 
 }
+#endif
+
 #endif
 LiveObjects& lo = LiveObjects::get();

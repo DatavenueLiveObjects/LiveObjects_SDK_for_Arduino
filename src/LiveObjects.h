@@ -35,7 +35,7 @@
  ******************************************************************************/
 #include "ArduinoMqttClient.h"
 #include <ArduinoJson.h>
-#include <ctime>
+#include <time.h>
 #include "LiveObjectsCert.h"
 #include "Utils.h"
 
@@ -105,7 +105,7 @@ class LiveObjectsBase
 {
 protected:
   LiveObjectsBase();
-  ~LiveObjectsBase();
+  ~LiveObjectsBase(){};
   LiveObjectsBase(const LiveObjectsBase&) = delete;
   LiveObjectsBase& operator==(const LiveObjectsBase&) = delete;
 
@@ -155,13 +155,13 @@ public:
 public:
   void addTimestamp(time_t timestamp);
   void addLocation(double lat, double lon, float alt);
-  void addPowerStatus();
+  virtual void addPowerStatus()=0;
   virtual void addNetworkInfo()=0;
   void clearPayload();
 
 public:
   void addCommand(const String name, onCommandCallback callback);
-  void publishMessage(const String& topic, JsonDocument& payload);
+  virtual void publishMessage(const String& topic, JsonDocument& payload)=0;
   void connect();
   void networkCheck();
   void disconnect();
@@ -171,7 +171,7 @@ public:
   void loop();
 
 protected:
-  virtual void begin(Protocol, Mode, bool) =0;
+  virtual void begin(Protocol, Mode, bool) = 0;
   virtual void connectNetwork() =0;
   virtual void checkNetwork() =0;
   virtual void disconnectNetwork() =0;
@@ -184,21 +184,21 @@ protected:
   void outputDebug(LOG_MSGTYPE type,T item, Args&... args);
   void outputDebug(LOG_MSGTYPE type = TEXT){Serial.print('\n');};
 private:
-  void checkMQTT();
-  void connectMQTT();
-  void disconnectMQTT();
-
+  virtual void checkMQTT()=0;
+  virtual void connectMQTT()=0;
+  virtual void disconnectMQTT()=0;
 
 private:
  /******************************************************************************
    CONFIGURATION MANAGER
  ******************************************************************************/
-    void configurationManager(int messageSize =-1);
+    virtual void configurationManager(int)=0;
 /******************************************************************************
    COMMAND MANAGEMENT
  ******************************************************************************/
-    void commandManager();
-public:
+    virtual void commandManager()=0;
+
+  public:
 /******************************************************************************
    TEMPLATE FUNCTIONS
 ******************************************************************************/
@@ -225,6 +225,28 @@ protected:
     template<typename T, typename E, typename R, typename ... Args>
     void addToPayload(T key, E val, R tmp , Args ... args);
 /******************************************************************************
+   PARAM TYPERS
+ ******************************************************************************/
+    void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    //void paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    //void paramTyper(const String& name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, double* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, float* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, String* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+
+/******************************************************************************
+   POINTER TYPER
+ ******************************************************************************/
+   void ptrTyper(const LiveObjects_parameter param, const JsonDocument& configIn, JsonDocument& configOut);
+
+/******************************************************************************
    OBJECTS
 ******************************************************************************/
 protected:
@@ -236,42 +258,19 @@ protected:
    VARIABLES
 ******************************************************************************/
 private:
-    unsigned long lastKeepAliveMQTT =  0;
-    unsigned long lastKeepAliveNetwork  = 0;
+  unsigned long lastKeepAliveMQTT =  0;
+  unsigned long lastKeepAliveNetwork  = 0;
 
 protected:
-    Client* m_pClient;
-    MqttClient *m_pMqttclient;
-    String m_sMqttid;
-    String m_sPayload;
-    uint16_t m_nPort;
-    Protocol m_Protocol;
-    Mode m_Mode;
-    bool m_bInitialMqttConfig;
-    bool m_bDebug;
-    bool m_bCertLoaded;
-    bool m_bInitialized;
-/******************************************************************************
-   PARAM TYPERS
- ******************************************************************************/
-    void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, double* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, float* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, String* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-
-/******************************************************************************
-   POINTER TYPER
- ******************************************************************************/
-   void ptrTyper(const LiveObjects_parameter param, const JsonDocument& configIn, JsonDocument& configOut);
+  String m_sMqttid;
+  String m_sPayload;
+  uint16_t m_nPort;
+  Protocol m_Protocol;
+  Mode m_Mode;
+  bool m_bInitialMqttConfig;
+  bool m_bDebug;
+  bool m_bCertLoaded;
+  bool m_bInitialized;
 };
 
 template<typename LOtA>
@@ -379,6 +378,110 @@ void LiveObjectsBase::addToStringPayload(T val, Args ... args)
 
 extern const String SECRET_LIVEOBJECTS_API_KEY;
 
+
+#ifdef ARDUINO_ARCH_AVR
+#include <SoftwareSerial.h>
+#include "Adafruit_FONA.h"
+
+#define FONA_PWRKEY 6
+#define FONA_RST 7
+#define FONA_TX 10 // Microcontroller RX
+#define FONA_RX 11 // Microcontroller TX
+
+class LiveObjectsAVR : public LiveObjectsBase
+{
+public:
+    static LiveObjectsAVR& get()
+    {
+      static LiveObjectsAVR g; return g;
+    }
+protected:
+  LiveObjectsAVR();
+  ~LiveObjectsAVR();
+  LiveObjectsAVR(const LiveObjectsAVR&) = delete;
+  LiveObjectsAVR& operator==(const LiveObjectsAVR&) = delete;
+protected:
+  void checkMQTT();
+  void connectMQTT();
+  void disconnectMQTT();
+
+
+public:
+  void addPowerStatus();
+  void addNetworkInfo();
+  void begin(Protocol p, Mode m , bool debug);
+protected:
+  void publishMessage(const String& topic, JsonDocument& payload);
+  void onMQTTmessage(int messageSize);
+
+protected:
+  void connectNetwork();
+  void checkNetwork();
+  void disconnectNetwork();
+  
+private:
+ /******************************************************************************
+   CONFIGURATION MANAGER
+ ******************************************************************************/
+    void configurationManager(int message =-1){};
+/******************************************************************************
+   COMMAND MANAGEMENT
+ ******************************************************************************/
+    void commandManager(){};
+
+  private:
+  SoftwareSerial m_serialFona;
+  Adafruit_FONA_LTE m_Fona;
+  String m_sMessage;
+};
+
+typedef LiveObjectsAVR LiveObjects;
+#elif defined ARDUINO_ARCH_SAMD
+class LiveObjectsSAMD : public LiveObjectsBase
+{
+protected:
+  LiveObjectsSAMD();
+  ~LiveObjectsSAMD();
+  LiveObjectsSAMD(const LiveObjectsSAMD&) = delete;
+  LiveObjectsSAMD& operator==(const LiveObjectsSAMD&) = delete;
+
+
+protected:
+  void checkMQTT();
+  void connectMQTT();
+  void disconnectMQTT();
+
+
+public:
+  void addPowerStatus();
+
+protected:
+  void publishMessage(const String& topic, JsonDocument& payload);
+  void onMQTTmessage(int messageSize);
+
+protected:
+  virtual void begin(Protocol, Mode, bool) = 0;
+  virtual void connectNetwork() =0;
+  virtual void checkNetwork() =0;
+  virtual void disconnectNetwork() =0;
+  virtual void addNetworkInfo()=0;
+
+
+private:
+ /******************************************************************************
+   CONFIGURATION MANAGER
+ ******************************************************************************/
+    void configurationManager(int message =-1);
+/******************************************************************************
+   COMMAND MANAGEMENT
+ ******************************************************************************/
+    void commandManager();
+
+protected:
+    Client* m_pClient;
+    MqttClient *m_pMqttclient;
+};
+
  /******************************************************************************
    Cellular BOARDS CLASS
  ******************************************************************************/
@@ -390,7 +493,7 @@ extern const String SECRET_LIVEOBJECTS_API_KEY;
 #include <MKRGSM.h>
 #endif
 #if defined NBD || defined GSMD
-class LiveObjectsCellular : public LiveObjectsBase
+class LiveObjectsCellular : public LiveObjectsSAMD
 {
   public:
     static LiveObjectsCellular& get()
@@ -449,7 +552,7 @@ extern const String SECRET_APN_PASS;
 #define WIFI
 #endif
 #ifdef WIFI
-class LiveObjectsWiFi : public LiveObjectsBase
+class LiveObjectsWiFi : public LiveObjectsSAMD
 {
   public:
     static LiveObjectsWiFi& get()
@@ -483,5 +586,7 @@ typedef LiveObjectsWiFi LiveObjects;
 #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 #define PMIC_PRESENT
 #endif
+
+#endif;
 
 extern LiveObjects& lo;
