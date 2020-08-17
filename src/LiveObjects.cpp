@@ -8,6 +8,7 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_bInitialMqttConfig(false)
     ,m_bCertLoaded(false)
     ,m_sPayload()
+    ,m_bSubCMD(false)
 {}
 /******************************************************************************
    PARAM TYPERS
@@ -210,7 +211,6 @@ void LiveObjectsBase::setClientID(const String id)
 }
 void LiveObjectsBase::addTimestamp(time_t timestamp)
 {
-  timestamp-=504921600;
   char bufer[sizeof("2011-10-08T07:07:09Z")];
   strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
   if(m_Protocol == SMS)
@@ -319,7 +319,6 @@ void LiveObjectsAVR::begin(Protocol p, Mode m, bool debug)
 void LiveObjectsAVR::checkNetwork()
 {
   int n = m_Fona.getNetworkStatus();
-  outputDebug(ERR,n);
   if (n == 0) outputDebug(INFO,"Network status: Not registered");
   else if (n == 1) outputDebug(INFO,"Network status: Registered (home)");
   else if (n == 2) outputDebug(INFO,"Network status: Not registered (searching)");
@@ -351,11 +350,12 @@ void LiveObjectsAVR::connectNetwork()
   outputDebug(INFO, "Connecting to internet");
   if (!m_Fona.wirelessConnStatus()) 
   {
-    while (!m_Fona.openWirelessConnection(true)) 
-    {
-      outputDebug(TEXT,".");
-      delay(2000); // Retry every 2s
-    }
+    // while (!m_Fona.openWirelessConnection(true)) 
+    // {
+    //   outputDebug(TEXT,".");
+    //   outputDebug();
+    //   delay(2000); // Retry every 2s
+    // }
   }
   outputDebug(INFO, "Connected!");
 }
@@ -369,17 +369,18 @@ void LiveObjectsAVR::connectMQTT()
 {
   if(!m_Fona.MQTT_connectionStatus())
   {
-    m_Fona.MQTT_setParameter("URL", MQTT_BROKER, m_nPort);
     // Set up MQTT username and password if necessary
+    while(!m_Fona.MQTT_setParameter("URL", MQTT_BROKER, m_nPort));
     m_Fona.MQTT_setParameter("USERNAME", MQTT_USER);
     m_Fona.MQTT_setParameter("PASSWORD", SECRET_LIVEOBJECTS_API_KEY.c_str());
-    m_Fona.MQTT_setParameter("CLIENTID",m_sMqttid.c_str());
+    m_Fona.MQTT_setParameter("CLIENTID","SIM7000");
     //fona.MQTTsetParameter("KEEPTIME", 30); // Time to connect to server, 60s by default
     
     outputDebug(INFO,"Connecting to MQTT broker ", MQTT_BROKER, m_nPort);
     while (! m_Fona.MQTT_connect(true)) {
       outputDebug(TEXT,".");
     }
+    outputDebug();
     outputDebug(INFO, "You are connected to mqtt broker");
 
     m_Fona.MQTT_subscribe(MQTT_SUBCFG,0);
@@ -557,6 +558,7 @@ void LiveObjectsSAMD::publishMessage(const String& topic, JsonDocument& payload)
 
 void LiveObjectsSAMD::checkMQTT()
 {
+  if(!m_bSubCMD) if(commands.size()>0) m_pMqttclient->subscribe(MQTT_SUBCMD);
   if(!m_pMqttclient->connected())
     connectMQTT();
   m_pMqttclient->poll();
@@ -581,8 +583,8 @@ void LiveObjectsSAMD::connectMQTT()
   while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(TEXT,".");
   outputDebug(INFO,"You're connected to the MQTT broker");
 
-  m_pMqttclient->subscribe(MQTT_SUBCFG);
-  m_pMqttclient->subscribe(MQTT_SUBCMD);
+  if(parameters.size()>0)m_pMqttclient->subscribe(MQTT_SUBCFG);
+  if(!m_bSubCMD && commands.size()>0) m_pMqttclient->subscribe(MQTT_SUBCMD);
 
   m_pMqttclient->poll();
 
@@ -611,8 +613,8 @@ void LiveObjectsSAMD::addPowerStatus()
   else
   {
     addToPayload(easyDataPayload[JSONVALUE].createNestedObject("powerStatus"),
-                "external_power",(usb ? "Yes" : !bat && power ? "Yes" : "No")
-                ,"battery_connected",(bat ? "Yes" : "No")
+                "external_power",(usb ? true : (!bat && power))
+                ,"battery_connected",bat 
                 ,"battery_voltage",voltage);
   }
   #endif
@@ -716,10 +718,12 @@ void LiveObjectsCellular::connectNetwork()
    #ifdef NBD
    while (m_Acces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
      outputDebug(TEXT,".");
+   outputDebug();
    #elif defined GSMD
     while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)
         || (m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)){
       outputDebug(TEXT, ".");}
+    outputDebug();
    #endif
    outputDebug(INFO,"You're connected to the network");
 
@@ -879,19 +883,6 @@ void LiveObjectsWiFi::begin(Protocol p, Mode s, bool bDebug)
     outputDebug(ERR,"Wrong mode! Stopping...");
     while(true);
   }
-
-
-  uint8_t mac[6];
-  char buff[10];
-  WiFi.macAddress(mac);
-  for(int i=0;i<6;++i)
-  {
-    memset(buff,'\0',10);
-    itoa(mac[i],buff,16);
-    m_sMac += buff;
-    if(i!=5) m_sMac += ':';
-  }
-  m_sMqttid = m_sMac;
   m_bInitialized = true;
   m_pMqttclient->onMessage(messageCallback);
 }
@@ -924,11 +915,41 @@ void LiveObjectsWiFi::connectNetwork()
     outputDebug(TEXT,".");
     delay(1000);
   }
+  outputDebug();
   IPAddress ip = WiFi.localIP();
   for(int i=0;i<4;++i)
   {
     m_sIP+=ip[i];
     if(i!=3) m_sIP+='.';
+  }
+
+  uint8_t mac[6];
+  char buff[10];
+  WiFi.macAddress(mac);
+  #ifdef NINA
+  for(int i=0;i<6;++i)
+  #elif defined W101
+  for(int i=5;i>=0;--i)
+  #endif
+  {
+    memset(buff,'\0',10);
+    itoa(mac[i],buff,16);
+    if(mac[i]<17)
+    {
+      m_sMac+="0";
+      m_sMqttid+="0";
+    }
+    for(int j=0;j<strlen(buff);++j)
+    {
+      m_sMac += (char)toupper(buff[j]);
+      m_sMqttid += (char)toupper(buff[j]);
+    }
+    
+  #ifdef NINA
+  if(i!=5) m_sMac += ':';
+  #elif defined W101
+  if(i!=0) m_sMac += ':';
+  #endif
   }
 
 }

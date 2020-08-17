@@ -271,6 +271,7 @@ protected:
   bool m_bDebug;
   bool m_bCertLoaded;
   bool m_bInitialized;
+  bool m_bSubCMD;
 };
 
 template<typename LOtA>
@@ -360,7 +361,7 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
     default:
       Serial.print(item);
   }
-  outputDebug(TEXT,args...);
+  if(String(item)!=".") outputDebug(TEXT,args...);
 }
 
 template<typename T,typename ... Args>
@@ -546,9 +547,11 @@ extern const String SECRET_APN_PASS;
 #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_NANO_33_IOT || defined ARDUINO_SAMD_MKRVIDOR4000
 #include <WiFiNINA.h>
 #define WIFI
+#define NINA
 #endif
 #if ARDUINO_SAMD_MKR1000
 #include <WiFi101.h>
+#define W101
 #define WIFI
 #endif
 #ifdef WIFI
