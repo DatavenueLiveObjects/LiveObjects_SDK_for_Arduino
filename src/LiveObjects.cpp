@@ -142,7 +142,7 @@ void LiveObjectsBase::ptrTyper(const LiveObjects_parameter param, const JsonDocu
 
 void LiveObjectsBase::addCommand(const String name, onCommandCallback callback) {
   if(!commands.push(new LiveObjects_command(name, callback))) outputDebug(ERR, "Command ",name," already exists, skipping....");
-}
+} 
 
 void LiveObjectsBase::connect()
 {
@@ -242,9 +242,6 @@ bool LiveObjectsBase::debugEnabled()
 #if defined ARDUINO_ARCH_AVR
 
 LiveObjectsAVR::LiveObjectsAVR()
-    :
-    m_serialFona(FONA_TX, FONA_RX),
-    m_Fona()
 {}
 
 void LiveObjectsAVR::begin(Protocol p, Mode m, bool debug)
@@ -259,25 +256,25 @@ void LiveObjectsAVR::begin(Protocol p, Mode m, bool debug)
   //Set reset pin to default state
   pinMode(FONA_RST, OUTPUT);
   digitalWrite(FONA_RST, HIGH);
-  pinMode(FONA_PWRKEY, OUTPUT);
 
   //Power on Module
+  pinMode(FONA_PWRKEY, OUTPUT);
   digitalWrite(FONA_PWRKEY, LOW);
   delay(100); // For SIM7000
   digitalWrite(FONA_PWRKEY, HIGH);
 
+  m_serialFona->begin(9600); // Default SIM7000 shield baud rate
   outputDebug(INFO, "Setting baudrate 9600");
-  m_serialFona.begin(9600); // Default SIM7000 shield baud rate
-  m_serialFona.println("AT+IPR=9600"); // Set baud rate
+  m_serialFona->println("AT+IPR=9600"); // Set baud rate
   delay(100); // Short pause to let the command run
-  m_serialFona.begin(9600);
-  if (!m_Fona.begin(m_serialFona)) {
+  m_serialFona->begin(9600);
+  if (!m_Fona->begin(*m_serialFona)) {
     outputDebug(ERR,"Cannot find FONA");
     while(1); // Don't proceed if it couldn't find the device
   }
 
   String f;
-  switch (m_Fona.type()) {
+  switch (m_Fona->type()) {
     case SIM800L:
       f= "SIM800L"; break;
     case SIM800H:
@@ -309,16 +306,16 @@ void LiveObjectsAVR::begin(Protocol p, Mode m, bool debug)
   
   // Print module IMEI number.
   char tab[20];
-  while(m_Fona.getIMEI(tab)<1);
-  m_sMqttid = tab;
+  while(m_Fona->getIMEI(tab)<1);
+  m_sMqttid = "SIM7000";
   outputDebug(INFO,"IMEI: ",m_sMqttid);
 
-  m_Fona.setFunctionality(1);
+  m_Fona->setFunctionality(1);
 }
 
 void LiveObjectsAVR::checkNetwork()
 {
-  int n = m_Fona.getNetworkStatus();
+  int n = m_Fona->getNetworkStatus();
   if (n == 0) outputDebug(INFO,"Network status: Not registered");
   else if (n == 1) outputDebug(INFO,"Network status: Registered (home)");
   else if (n == 2) outputDebug(INFO,"Network status: Not registered (searching)");
@@ -331,61 +328,63 @@ void LiveObjectsAVR::checkNetwork()
     connectNetwork();
   } 
   
-  // if(networkStatus==CONNECTED)
-  // {
-  //   while(m_Fona.available()) m_sMessage += (char)m_Fona.read();
-  //   if(m_sMessage.length()>0)
-  //   {
-  //     outputDebug(INFO, "Received message: ",m_sMessage);
-  //     m_sMessage="";
-  //   }
-  // }
+  if(networkStatus==CONNECTED)
+  {
+    outputDebug(INFO,"Checking for available commands");
+    while(m_Fona->available()) m_sMessage += (char)m_Fona->read();
+    if(m_sMessage.length()>0)
+    {
+      outputDebug(INFO, "Received message: ",m_sMessage);
+      m_sMessage="";
+    }
+  }
 }
 
 void LiveObjectsAVR::connectNetwork()
 {
+  // m_Fona->setNetworkSettings(F("internet"), F(""), F(""));
   outputDebug(INFO, "Connecting to cellular network");
-  checkNetwork();
+  int x = m_Fona->getNetworkStatus();
+  while(x!=5 && x!=1) x = m_Fona->getNetworkStatus();
   outputDebug(INFO, "Connected!");
   outputDebug(INFO, "Connecting to internet");
-  if (!m_Fona.wirelessConnStatus()) 
+  if (!m_Fona->wirelessConnStatus()) 
   {
-    // while (!m_Fona.openWirelessConnection(true)) 
-    // {
-    //   outputDebug(TEXT,".");
-    //   outputDebug();
-    //   delay(2000); // Retry every 2s
-    // }
+    while (!m_Fona->openWirelessConnection(true)) 
+    {
+      outputDebug(TEXT,".");
+      delay(2000); // Retry every 2s
+    }
+    outputDebug();
   }
   outputDebug(INFO, "Connected!");
 }
 
 void LiveObjectsAVR::checkMQTT()
 {
-  if(!m_Fona.MQTT_connectionStatus())
+  if(!m_Fona->MQTT_connectionStatus())
     connectMQTT();
 }
 void LiveObjectsAVR::connectMQTT()
 {
-  if(!m_Fona.MQTT_connectionStatus())
+  if(!m_Fona->MQTT_connectionStatus())
   {
     // Set up MQTT username and password if necessary
-    while(!m_Fona.MQTT_setParameter("URL", MQTT_BROKER, m_nPort));
-    m_Fona.MQTT_setParameter("USERNAME", MQTT_USER);
-    m_Fona.MQTT_setParameter("PASSWORD", SECRET_LIVEOBJECTS_API_KEY.c_str());
-    m_Fona.MQTT_setParameter("CLIENTID","SIM7000");
+    m_Fona->MQTT_setParameter("URL", MQTT_BROKER, m_nPort);
+    m_Fona->MQTT_setParameter("USERNAME", MQTT_USER);
+    m_Fona->MQTT_setParameter("PASSWORD", SECRET_LIVEOBJECTS_API_KEY.c_str());
+    m_Fona->MQTT_setParameter("CLIENTID","SIM7000");
     //fona.MQTTsetParameter("KEEPTIME", 30); // Time to connect to server, 60s by default
     
-    outputDebug(INFO,"Connecting to MQTT broker ", MQTT_BROKER, m_nPort);
-    while (! m_Fona.MQTT_connect(true)) {
-      outputDebug(TEXT,".");
+    //outputDebug(INFO,"Connecting to MQTT broker ", MQTT_BROKER, m_nPort);
+    while (! m_Fona->MQTT_connect(true)) {
+      //outputDebug(TEXT,".");
     }
-    outputDebug();
-    outputDebug(INFO, "You are connected to mqtt broker");
-
-    m_Fona.MQTT_subscribe(MQTT_SUBCFG,0);
-    m_Fona.MQTT_subscribe(MQTT_SUBCMD,0);
+    //outputDebug();
+    //outputDebug(INFO, "You are connected to mqtt broker");
   }
+  while(!m_Fona->MQTT_subscribe(MQTT_SUBCFG,0)) delay(100);
+  while(!m_Fona->MQTT_subscribe(MQTT_SUBCMD,0)) delay(100);;
 }
 void LiveObjectsAVR::disconnectMQTT()
 {
@@ -418,8 +417,12 @@ void LiveObjectsAVR::publishMessage(const String& topic, JsonDocument& payload)
   outputDebug(INFO,"Publishing message on topic: ", topic);
   serializeJsonPretty(payload,Serial);
   serializeJson(payload,s);
-  while(!m_Fona.MQTT_publish(topic.c_str(),s.c_str(),s.length(),0,0)) outputDebug(WARN,"Failed to send message, retrying...");
+  while(!m_Fona->MQTT_publish(topic.c_str(),s.c_str(),s.length(),0,0)) outputDebug(WARN,"Failed to send message, retrying...");
 }
+
+SoftwareSerial* m_serialFona = new SoftwareSerial(FONA_TX, FONA_RX);
+Adafruit_FONA_LTE* m_Fona = new Adafruit_FONA_LTE();
+
 #elif defined ARDUINO_ARCH_SAMD
 
 void LiveObjectsSAMD::configurationManager(int messageSize) {
@@ -926,11 +929,7 @@ void LiveObjectsWiFi::connectNetwork()
   uint8_t mac[6];
   char buff[10];
   WiFi.macAddress(mac);
-  #ifdef NINA
-  for(int i=0;i<6;++i)
-  #elif defined W101
   for(int i=5;i>=0;--i)
-  #endif
   {
     memset(buff,'\0',10);
     itoa(mac[i],buff,16);
@@ -944,12 +943,7 @@ void LiveObjectsWiFi::connectNetwork()
       m_sMac += (char)toupper(buff[j]);
       m_sMqttid += (char)toupper(buff[j]);
     }
-    
-  #ifdef NINA
-  if(i!=5) m_sMac += ':';
-  #elif defined W101
   if(i!=0) m_sMac += ':';
-  #endif
   }
 
 }

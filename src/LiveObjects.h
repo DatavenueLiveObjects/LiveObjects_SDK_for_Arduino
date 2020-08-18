@@ -381,9 +381,8 @@ extern const String SECRET_LIVEOBJECTS_API_KEY;
 
 
 #ifdef ARDUINO_ARCH_AVR
-#include <SoftwareSerial.h>
 #include "Adafruit_FONA.h"
-
+#include <SoftwareSerial.h>
 #define FONA_PWRKEY 6
 #define FONA_RST 7
 #define FONA_TX 10 // Microcontroller RX
@@ -431,10 +430,10 @@ private:
     void commandManager(){};
 
   private:
-  SoftwareSerial m_serialFona;
-  Adafruit_FONA_LTE m_Fona;
   String m_sMessage;
 };
+extern SoftwareSerial* m_serialFona;
+extern Adafruit_FONA_LTE* m_Fona;
 
 typedef LiveObjectsAVR LiveObjects;
 #elif defined ARDUINO_ARCH_SAMD
