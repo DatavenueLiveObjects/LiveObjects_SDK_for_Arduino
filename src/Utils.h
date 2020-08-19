@@ -166,12 +166,7 @@ String ToHex(uint8_t x);
  *                  PMIC CONSTANTS
  * 
  * ****************************************************************************/
-
-#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRGSM1400 || defined ARDUINO_SAMD_MKRNB1500
 #define PMIC_ADDRESS 0x6B
-#else
-#define PMIC_ADDRESS 0x60
-#endif
 #define SYSTEM_STATUS_REGISTER 0x08
 #define PMIC_VERSION_REGISTER 0x0A
 

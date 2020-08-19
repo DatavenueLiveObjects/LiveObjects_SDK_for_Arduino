@@ -251,6 +251,7 @@ protected:
     bool m_bDebug;
     bool m_bCertLoaded;
     bool m_bInitialized;
+    bool m_bSubCMD;
 /******************************************************************************
    PARAM TYPERS
  ******************************************************************************/
@@ -361,7 +362,7 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
     default:
       Serial.print(item);
   }
-  outputDebug(TEXT,args...);
+  if(String(item)!=".") outputDebug(TEXT,args...);
 }
 
 template<typename T,typename ... Args>

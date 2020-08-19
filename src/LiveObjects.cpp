@@ -10,6 +10,7 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_pClient(nullptr)
     ,m_pMqttclient(nullptr)
     ,m_sPayload()
+    ,m_bSubCMD(false)
 {
 }
 LiveObjectsBase::~LiveObjectsBase()
@@ -349,7 +350,6 @@ void LiveObjectsBase::setClientID(const String id)
 }
 void LiveObjectsBase::addTimestamp(time_t timestamp)
 {
-  timestamp-=504921600;
   char bufer[sizeof("2011-10-08T07:07:09Z")];
   strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
   if(m_Protocol == SMS)
@@ -380,6 +380,7 @@ bool LiveObjectsBase::debugEnabled()
 
 void LiveObjectsBase::checkMQTT()
 {
+  if(!m_bSubCMD) if(commands.size()>0) m_pMqttclient->subscribe(MQTT_SUBCMD);
   if(!m_pMqttclient->connected())
     connectMQTT();
 }
@@ -403,8 +404,8 @@ void LiveObjectsBase::connectMQTT()
   while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(TEXT,".");
   outputDebug(INFO,"You're connected to the MQTT broker");
 
-  m_pMqttclient->subscribe(MQTT_SUBCFG);
-  m_pMqttclient->subscribe(MQTT_SUBCMD);
+  if(parameters.size()>0)m_pMqttclient->subscribe(MQTT_SUBCFG);
+  if(!m_bSubCMD && commands.size()>0) m_pMqttclient->subscribe(MQTT_SUBCMD);
 
   m_pMqttclient->poll();
 
@@ -433,8 +434,8 @@ void LiveObjectsBase::addPowerStatus()
   else
   {
     addToPayload(easyDataPayload[JSONVALUE].createNestedObject("powerStatus"),
-                "external_power",(usb ? "Yes" : !bat && power ? "Yes" : "No")
-                ,"battery_connected",(bat ? "Yes" : "No")
+                 "external_power",(usb ? true : (!bat && power))
+                ,"battery_connected",bat 
                 ,"battery_voltage",voltage);
   }
   #endif
@@ -538,10 +539,12 @@ void LiveObjectsCellular::connectNetwork()
    #ifdef NBD
    while (m_Acces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
      outputDebug(TEXT,".");
+   outputDebug();
    #elif defined GSMD
     while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)
         || (m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)){
       outputDebug(TEXT, ".");}
+   outputDebug();
    #endif
    outputDebug(INFO,"You're connected to the network");
 
@@ -614,18 +617,17 @@ void LiveObjectsCellular::addNetworkInfo()
   String strength=m_Scanner.getSignalStrength();
   String carrier = m_Scanner.getCurrentCarrier();
   #ifdef NBD
-  if(m_Protocol == SMS) addToStringPayload((int)(m_Acces.status() == NB_READY),strength,carrier);
+  if(m_Protocol == SMS) addToStringPayload((m_Acces.status() == NB_READY),strength,carrier);
   #elif defined GSMD
   if(m_Protocol == SMS) addToStringPayload(m_Acces.status() == GSM_READY,strength,carrier);
   #endif
   else 
   {
-    //JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
-    String status;
+    bool status;
     #ifdef NBD
-    status = m_Acces.status() == NB_READY ? "connected":"disconnected";
+    status = m_Acces.status() == NB_READY;
     #elif defined GSMD
-    status = m_Acces.status() == GSM_READY ? "connected":"disconnected";
+    status = m_Acces.status() == GSM_READY;
     #endif
     addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"connection_status",status,"strength",strength,"carrier",carrier);
   }
@@ -702,19 +704,6 @@ void LiveObjectsWiFi::begin(Protocol p, Mode s, bool bDebug)
     outputDebug(ERR,"Wrong mode! Stopping...");
     while(true);
   }
-
-
-  uint8_t mac[6];
-  char buff[10];
-  WiFi.macAddress(mac);
-  for(int i=0;i<6;++i)
-  {
-    memset(buff,'\0',10);
-    itoa(mac[i],buff,16);
-    m_sMac += buff;
-    if(i!=5) m_sMac += ':';
-  }
-  m_sMqttid = m_sMac;
   m_bInitialized = true;
   m_pMqttclient->onMessage(messageCallback);
 }
@@ -747,6 +736,7 @@ void LiveObjectsWiFi::connectNetwork()
     outputDebug(TEXT,".");
     delay(1000);
   }
+   outputDebug();
   IPAddress ip = WiFi.localIP();
   for(int i=0;i<4;++i)
   {
@@ -754,6 +744,26 @@ void LiveObjectsWiFi::connectNetwork()
     if(i!=3) m_sIP+='.';
   }
 
+   uint8_t mac[6];
+  char buff[10];
+  WiFi.macAddress(mac);
+
+  for(int i=5;i>=0;--i)
+  {
+    memset(buff,'\0',10);
+    itoa(mac[i],buff,16);
+    if(mac[i]<17)
+    {
+      m_sMac+="0";
+      m_sMqttid+="0";
+    }
+    for(int j=0;j<strlen(buff);++j)
+    {
+      m_sMac += (char)toupper(buff[j]);
+      m_sMqttid += (char)toupper(buff[j]);
+    }
+  if(i!=0) m_sMac += ':';
+  }
 }
 void LiveObjectsWiFi::checkNetwork()
 {
