@@ -5,23 +5,26 @@
 This code wraps all the functions necessary to make your object work with Live Objects.
 
  You can declare parameters, which you can later update OTA from Live objects. You can also create commands to trigger actions remotely.
-The code will manage the LTE-M, GSM and WiFi connection(depending on currently used board), as well MQTT exchanges with Live objects under the hood to keep your parameters up to date or execute the commands received without you having to take care of them (apart from writing the code of these commands, of course).
+The code will manage the LTE-M, GSM and WiFi connection(depending on currently used board), as well MQTT and SMS exchanges with Live objects under the hood to keep your parameters up to date or execute the commands received without you having to take care of them (apart from writing the code of these commands, of course).
 
 ## Compatibility ##
-| Board | MQTT | MQTTS |
-| :--- | :---: | :---: |
-| Arduino MKR1000 WIFI | OK | - |
-| Arduino MKR 1010 WiFi | OK | OK |
-| Arduino MKR 1400 GSM | OK | OK |
-| Arduino MKR 1500 NB | OK | OK |
-| Arduino MKR VIDOR 4000 | OK | OK* |
-| Arduino Nano 33 IoT | OK | OK |
+| Board | MQTT | MQTTS | SMS |
+| :--- | :---: | :---: | :---: |
+| Arduino MKR1000 WIFI | OK | - | - |
+| Arduino MKR 1010 WiFi | OK | OK | - |
+| Arduino MKR 1400 GSM | OK | OK | OK |
+| Arduino MKR 1500 NB | OK | OK | OK |
+| Arduino MKR VIDOR 4000 | OK | OK* | - |
+| Arduino Nano 33 IoT | OK | OK | - |
 
 ## Prerequisites/dependecies ##
 This code needs 2 ~~3~~ external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
 
 #### Libraries provided by Arduino
 - [MKRNB](https://www.arduino.cc/en/Reference/MKRNB) in order to handle the LTE-M module on **Arduino MKR NB 1500**
+- [MKRGSM](https://www.arduino.cc/en/Reference/MKRGSM) in order to handle the GSM module on **Arduino MKR GSM 1400**
+- [WiFiNINA](https://www.arduino.cc/en/Reference/WiFiNINA) in order to handle WiFi module on **Arduino MKRWIFI 1010** and **Arduino Nano 33 IoT**
+- [WiFi101](https://www.arduino.cc/en/Reference/WiFi101) in order to handle WiFi module on **Arduino MKR 1000** 
 - ~~[ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino~~ *
 
  \* currently integrated into this SDK, until https://github.com/arduino-libraries/ArduinoMqttClient/pull/44 fix will be merged
@@ -102,8 +105,7 @@ void setup() {
   lo.addParameter("play tone", playTone);
 }
 ```
-
-> :warning: **Command name and arguments are case-sensitive when creating the command on Live Objects.** On the opposite, there is no specific order for specifying the command arguments.
+> :warning: **Command name and arguments are case-sensitive when creating the command on Live Objects.**: On the opposite, there is no specific order for specifying the command arguments.
 ![Live Object screenshot](./LiveObjects_command.png)
 
 You may use the ArduinoJSON library, or any other library to process the JSON objects more easily.
@@ -145,35 +147,37 @@ void loop() {
 ```
 
 ### Connect, disconnect and loop ###
-You can control the connection and disconnection of your device using `LiveObjects_connect()` and `LiveObjects_disconnect()`.
+You can control the connection and disconnection of your device using `connect()` and `disconnect()`.
 
-In order to check for any incoming configuration update or command, you need to keep the `LiveObjects_loop()` instruction in your main loop.
+Before calling connect, using `begin(Protocol, Mode, doDebug)` u can specify which protocol and mode u want to use and also if you want to output debug messages.
+
+In order to check for any incoming configuration update or command, you need to keep the `loop()` instruction in your main loop.
+```c++
+void setup()
+{
+  lo.begin(MQTT,NONE,true);
+  lo.connect();
+}
+void loop()
+{
+  //Do some stuff
+  //...
+  lo.loop(); //Keep this in main loop
+}
+```
 
 ## Toubleshooting ##
 ### My payload is truncated on Live Objects ###
 This can happen with large payload, because of the fixed-size JSON storage allocated for processing your payload (512 bytes by default). You can allocate more room by modifying the value in the **'LiveObjects.h'** file at line 8:
 ```c++
-#define PAYLOAD_DATA_SIZE 512
+#define PAYLOAD_DATA_SIZE 1024
 ```
 
 ### My parameters are not registered on Live Objects ###
 Same reason as above, it can happen if you have a large number of parameters. You need to allocate more room by modifying the value in the **'LiveObjects.h'** file at line 7:
 ```c++
-#define PAYLOAD_DEVMGT_SIZE 256
+#define PAYLOAD_DATA_SIZE 1024
 ```
-
-### Only my first 10 parameters are registered on Live Objects ###
-By default, a maximum of 10 parameters can be managerd by the code sample. You can enable more parameters by modifying the value in the **'LiveObjects.h'** file at line 5:
-```c++
-#define PARAMETERS_NB_MAX 10
-```
-
-### Only my first 10 commands are working ###
-By default, a maximum of 10 commands can be managerd by the code sample. You can enable more commands by modifying the value in the **'LiveObjects.h'** file at line 6:
-```c++
-#define COMMANDS_NB_MAX 10
-```
-
 ### One of my command is not working ###
 If you have many arguments in your command, first check that you get all the arguments when entering the function:
 ```c++
@@ -187,5 +191,5 @@ void blinkLED(const String arguments, String &response) {
 ```
 If your arguments are incomplete, try allocating more room for JSON storage by modifying the value in the **'LiveObjects.h'** file at line 7:
 ```c++
-#define PAYLOAD_DEVMGT_SIZE 256
+#define PAYLOAD_DATA_SIZE 1024
 ```
