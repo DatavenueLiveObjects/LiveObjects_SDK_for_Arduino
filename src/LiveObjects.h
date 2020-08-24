@@ -236,8 +236,7 @@ protected:
    VARIABLES
 ******************************************************************************/
 private:
-    unsigned long lastKeepAliveMQTT =  0;
-    unsigned long lastKeepAliveNetwork  = 0;
+    unsigned long lastKeepAliveNetwork;
 
 protected:
     Client* m_pClient;

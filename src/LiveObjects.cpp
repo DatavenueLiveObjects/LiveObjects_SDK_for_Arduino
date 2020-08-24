@@ -11,6 +11,7 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_pMqttclient(nullptr)
     ,m_sPayload()
     ,m_bSubCMD(false)
+    ,lastKeepAliveNetwork(20000)
 {
 }
 LiveObjectsBase::~LiveObjectsBase()
@@ -334,7 +335,7 @@ void LiveObjectsBase::loop() {
 }
 void LiveObjectsBase::setProtocol(Protocol p)
 {
-//TODO
+//
 }
 void LiveObjectsBase::setMode(Mode s)
 {
@@ -424,18 +425,22 @@ void LiveObjectsBase::disconnectMQTT()
 void LiveObjectsBase::addPowerStatus()
 {
   #ifdef PMIC_PRESENT
-  int DATA = readRegister(SYSTEM_STATUS_REGISTER);
+  byte DATA = readRegister(SYSTEM_STATUS_REGISTER);
+  bool charging = (DATA & ((1<<5)|(1<<4)))!=0;
   bool bat = (DATA & (1<<0)) == 0;
-  bool usb = (DATA & ((1<<5)|(1<<4))) != 0;
   bool power=(DATA & (1<<2));
   double voltage=0.;
+  // outputDebug(INFO,  DATA&0b11000000u);
+  // outputDebug(INFO,  DATA);
+  // outputDebug(INFO,  power);
   if(bat) voltage = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
-  if(m_Protocol==SMS) addToStringPayload((usb ? 1 : (!bat && power ? 1 : 0)), bat ,( bat ? voltage : 0.));
+  if(m_Protocol==SMS) addToStringPayload((charging ? 1 : (!bat && power ? 1 : power)), bat ,charging, ( bat ? voltage : 0.));
   else
   {
     addToPayload(easyDataPayload[JSONVALUE].createNestedObject("powerStatus"),
-                 "external_power",(usb ? true : (!bat && power))
+                 "external_power",(charging? true : ((!bat && power)?true:power))
                 ,"battery_connected",bat 
+                ,"battery_charging", charging
                 ,"battery_voltage",voltage);
   }
   #endif
@@ -448,7 +453,7 @@ void LiveObjectsBase::addPowerStatus()
 
 
  /******************************************************************************
-   NB CLASS
+   Cellular CLASS
  ******************************************************************************/
 #if defined NBD || defined GSMD
 LiveObjectsCellular::LiveObjectsCellular()
@@ -498,9 +503,16 @@ void LiveObjectsCellular::begin(Protocol p, Mode s, bool bDebug)
     }
     m_pMqttclient->onMessage(messageCallback);
   }
+  else 
+  {
+    if(SECRET_SERVER_MSISDN.length()<3)
+    {
+      outputDebug(ERR,"SERVER MSISDN is empty! Check arduino_secrets.h! Stopping here....");
+      while(true);
+    }
+  }
   m_bInitialized = true;
 }
-
 void LiveObjectsCellular::connectNetwork()
 {
   //Set client id as IMEI
@@ -541,9 +553,8 @@ void LiveObjectsCellular::connectNetwork()
      outputDebug(TEXT,".");
    outputDebug();
    #elif defined GSMD
-    while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)
-        || (m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)){
-      outputDebug(TEXT, ".");}
+   while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)) outputDebug(TEXT, ".");
+   while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TEXT, ".");
    outputDebug();
    #endif
    outputDebug(INFO,"You're connected to the network");
@@ -570,7 +581,6 @@ void LiveObjectsCellular::connectNetwork()
 
 void LiveObjectsCellular::checkNetwork()
 {
-  
   #ifdef NBD
   if(m_Acces.status()!= NB_READY)
     connectNetwork();
@@ -578,7 +588,6 @@ void LiveObjectsCellular::checkNetwork()
   if(m_Acces.status()!= GSM_READY)
     connectNetwork();
   #endif
-
   if(m_Protocol == SMS)
   {
     String msg;
@@ -649,9 +658,9 @@ void LiveObjectsCellular::sendData()
       return;
     }
     outputDebug(INFO,"Publishing message: ", m_sPayload);
-    m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str());
+    if(m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str())!=1) outputDebug(ERR,"Error! begin");
     m_Sms.print(m_sPayload);
-    m_Sms.endSMS();
+    if(m_Sms.endSMS()!=1) outputDebug(ERR,"Error! end");
     m_sPayload="";
   }
 }
