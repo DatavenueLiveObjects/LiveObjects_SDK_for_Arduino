@@ -144,8 +144,7 @@ public:
 ******************************************************************************/
 
 public:
-  void setProtocol(Protocol p);
-  void setMode(Mode s);
+  void setProtocol(Protocol p, Mode mode);
   void enableDebug(bool b);
   void setClientID(const String id);
 
@@ -236,8 +235,7 @@ protected:
    VARIABLES
 ******************************************************************************/
 private:
-    unsigned long lastKeepAliveMQTT =  0;
-    unsigned long lastKeepAliveNetwork  = 0;
+    unsigned long lastKeepAliveNetwork;
 
 protected:
     Client* m_pClient;
