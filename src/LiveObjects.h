@@ -144,8 +144,7 @@ public:
 ******************************************************************************/
 
 public:
-  void setProtocol(Protocol p);
-  void setMode(Mode s);
+  void setProtocol(Protocol p, Mode mode);
   void enableDebug(bool b);
   void setClientID(const String id);
 

@@ -227,7 +227,7 @@ void LiveObjectsBase::commandManager() {
   StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdIn;
   StaticJsonDocument<PAYLOAD_DATA_SIZE> cmdOut;
   deserializeJson(cmdIn, *m_pMqttclient);
-
+  cmdOut[JSONCID] = cmdIn[JSONCID]; 
   if(m_bDebug)
   {
   serializeJsonPretty(cmdIn, Serial);
@@ -333,13 +333,13 @@ void LiveObjectsBase::loop() {
     if(m_Protocol == MQTT) m_pMqttclient->poll();
   }
 }
-void LiveObjectsBase::setProtocol(Protocol p)
+void LiveObjectsBase::setProtocol(Protocol p, Mode mode)
 {
-//
-}
-void LiveObjectsBase::setMode(Mode s)
-{
-//TODO
+  m_bInitialized = false;
+  m_bInitialMqttConfig = false;
+  m_bSubCMD=false;
+  begin(p,mode,m_bDebug);
+  connect();
 }
 void LiveObjectsBase::enableDebug(bool b)
 {
@@ -477,6 +477,12 @@ void LiveObjectsCellular::begin(Protocol p, Mode s, bool bDebug)
   m_bDebug = bDebug;
   if(p==MQTT)
   {
+    if(m_pMqttclient!= nullptr)
+      {
+        m_pMqttclient->stop();
+        delete m_pMqttclient;
+        m_pMqttclient=nullptr;
+      }
     switch(s)
     {
       case TLS:
@@ -521,44 +527,49 @@ void LiveObjectsCellular::connectNetwork()
     outputDebug(WARN,"missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");
     begin();
   }
-
   #ifdef NBD
-  NBModem modem;
+  if(m_Acces.status()!= NB_READY)
   #elif defined GSMD
-  GSMModem modem;
+  if(m_Acces.status()!= GSM_READY)
   #endif
-  if(modem.begin())
   {
-    if(m_sMqttid.length()==0)
+    #ifdef NBD
+    NBModem modem;
+    #elif defined GSMD
+    GSMModem modem;
+    #endif
+    if(modem.begin())
     {
-      String imei="";
-      for(int i=1;i<=3;i++)
+      if(m_sMqttid.length()==0)
       {
-        imei=modem.getIMEI();
-        if(imei.length()!=0) break;
-        delay(100*i);
+        String imei="";
+        for(int i=1;i<=3;i++)
+        {
+          imei=modem.getIMEI();
+          if(imei.length()!=0) break;
+          delay(100*i);
+        }
+        m_sMqttid = imei;
       }
-      m_sMqttid = imei;
     }
-  }
-  else
-  {
-    outputDebug(ERR,"Failed to initialize modem!" );
-    while(true);
-  }
+    else
+    {
+      outputDebug(ERR,"Failed to initialize modem!" );
+      while(true);
+    }
 
-   outputDebug(INFO,"Connecting to cellular network");
-   #ifdef NBD
-   while (m_Acces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
-     outputDebug(TEXT,".");
-   outputDebug();
-   #elif defined GSMD
-   while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)) outputDebug(TEXT, ".");
-   while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TEXT, ".");
-   outputDebug();
-   #endif
-   outputDebug(INFO,"You're connected to the network");
-
+    outputDebug(INFO,"Connecting to cellular network");
+    #ifdef NBD
+    while (m_Acces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
+      outputDebug(TEXT,".");
+    outputDebug();
+    #elif defined GSMD
+    while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)) outputDebug(TEXT, ".");
+    while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TEXT, ".");
+    outputDebug();
+    #endif
+    outputDebug(INFO,"You're connected to the network");
+  }
   if(m_nPort==8883){
     if (!m_bCertLoaded) {
       outputDebug(INFO,"Loading DigiCert Root CA certificate");
@@ -692,9 +703,16 @@ void LiveObjectsWiFi::begin(Protocol p, Mode s, bool bDebug)
   {
     outputDebug(ERR,"Wrong protocol! This board support only MQTT! Stopping....");
     while(true);
+  }
+  if(m_pMqttclient!= nullptr)
+  {
+    m_pMqttclient->stop();
+    delete m_pMqttclient;
+    m_pMqttclient=nullptr;
   } 
   switch(s)
   {
+    
     case TLS:
     #ifdef ARDUINO_SAMD_MKR1000
       outputDebug(ERR,"TLS NOT COMPATIBLE, STOPPING...");
