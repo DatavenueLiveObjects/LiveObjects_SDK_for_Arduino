@@ -28,7 +28,7 @@ void loop() {
     Serial.println("Sampling data");
     uptime = millis();
     lo.addToPayload("uptime", uptime);               // adding 'uptime' value to the current payload
-    lo.addTimeStamp(1596283200);                     // adding timestamp to the current payload
+    lo.addTimestamp(1596283200);                     // adding timestamp to the current payload
     Serial.println("Sending data to Live Objects");
     lo.sendData();                                   // send the data to Live Objects
     lastMessageTime = millis();
