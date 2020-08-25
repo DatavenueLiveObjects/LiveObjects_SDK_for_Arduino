@@ -20,13 +20,6 @@ byte readRegister(byte address) {
 void batteryBegin()
 {
   Wire.begin();
-#ifdef ARDUINO_ARCH_SAMD
-    pinMode(PIN_USB_HOST_ENABLE, OUTPUT);
-    digitalWrite(PIN_USB_HOST_ENABLE, LOW);
-    #if defined(ARDUINO_SAMD_MKRGSM1400) || defined(ARDUINO_SAMD_MKRNB1500)
-      pinMode(PMIC_IRQ_PIN, INPUT_PULLUP);
-    #endif
-#endif
    //check PMIC version
   if (readRegister(PMIC_VERSION_REGISTER) != 0x23) {
       Serial.println("[ERROR] PMIC NOT COMPATIBLE STOPPING");
