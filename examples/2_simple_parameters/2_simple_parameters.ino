@@ -29,7 +29,8 @@ void setup() {
   // upon the first connection: go to Devices > your device > Parameters
   // Note that parameters are reset upon restart.
   lo.addParameter("message rate (milliseconds)", messageRate);
-  lo.begin(MQTT, TLS, true);
+  lo.setSecurity(TLS);
+  lo.begin(MQTT, TEXT, true);
   lo.connect();                          // connects to the network + Live Objects
 }
 
