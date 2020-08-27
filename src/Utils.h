@@ -147,18 +147,15 @@ String ToHexTU(T val)
   return ret;
 }
 
+template<typename T>
+String ToHex(T x)
+{
+  return ToHexT(x);
+}
 String ToHex(String x);
-String ToHex(int x);
-String ToHex(long x);
-String ToHex(float x);
-String ToHex(double x);
-String ToHex(long long x);
-String ToHex(int8_t x);
 
-String ToHex(unsigned int x);
-String ToHex(unsigned long x);
-String ToHex(unsigned long long x);
-String ToHex(uint8_t x);
+uint8_t hexBinary(char msb, char lsb);
+
 
 
 /*******************************************************************************

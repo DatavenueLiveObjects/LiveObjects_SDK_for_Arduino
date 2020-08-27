@@ -15,6 +15,7 @@
 #define MQTT_BROKER "liveobjects.orange-business.com"
 #define MQTT_USER "json+device"
 #define MQTT_PUBDATA "dev/data"
+#define MQTT_PUBDATA_BINARY "dev/v1/data/binary"
 #define MQTT_SUBCFG "dev/cfg/upd"
 #define MQTT_PUBCFG "dev/cfg"
 #define MQTT_SUBCMD "dev/cmd"
@@ -81,13 +82,17 @@ enum Protocol
   //,LORA
 };
 
-enum Mode
+enum Security
 {
   NONE
   ,TLS
-  ,BINARY
-  ,TXT
   //,DTLS
+};
+
+enum Encoding
+{
+  BINARY
+  ,TEXT
 };
 
 enum LOG_MSGTYPE
@@ -95,7 +100,7 @@ enum LOG_MSGTYPE
   INFO,
   WARN,
   ERR,
-  TEXT
+  TXT
 };
 
 typedef void (*onParameterUpdateCallback)();
@@ -144,16 +149,18 @@ public:
 ******************************************************************************/
 
 public:
-  void setProtocol(Protocol p, Mode mode);
+  void changeConfiguration(Protocol p,Security s, Encoding mode);
+  void setSecurity(Security s);
   void enableDebug(bool b);
   void setClientID(const String id);
+  void setDecoder(String s);
 
 public:
   bool debugEnabled();
 
 public:
   void addTimestamp(time_t timestamp);
-  void addLocation(double lat, double lon, float alt);
+  void addLocation(double lat, double lon, double alt);
   void addPowerStatus();
   virtual void addNetworkInfo()=0;
   void clearPayload();
@@ -161,6 +168,7 @@ public:
 public:
   void addCommand(const String name, onCommandCallback callback);
   void publishMessage(const String& topic, JsonDocument& payload);
+  void publishMessage(const String& topic, String& payload);
   void connect();
   void networkCheck();
   void disconnect();
@@ -170,7 +178,7 @@ public:
   void loop();
 
 protected:
-  virtual void begin(Protocol, Mode, bool) =0;
+  virtual void begin(Protocol p, Encoding e, bool d);
   virtual void connectNetwork() =0;
   virtual void checkNetwork() =0;
   virtual void disconnectNetwork() =0;
@@ -181,7 +189,7 @@ protected:
 protected:
   template<typename T, typename ... Args>
   void outputDebug(LOG_MSGTYPE type,T item, Args&... args);
-  void outputDebug(LOG_MSGTYPE type = TEXT){Serial.print('\n');};
+  void outputDebug(LOG_MSGTYPE type = TXT){Serial.print('\n');};
 private:
   void checkMQTT();
   void connectMQTT();
@@ -242,9 +250,12 @@ protected:
     MqttClient *m_pMqttclient;
     String m_sMqttid;
     String m_sPayload;
+    String m_sTopic;
+    String m_sDecoder;
     uint16_t m_nPort;
     Protocol m_Protocol;
-    Mode m_Mode;
+    Security m_Security;
+    Encoding m_Encoding;
     bool m_bInitialMqttConfig;
     bool m_bDebug;
     bool m_bCertLoaded;
@@ -306,10 +317,17 @@ inline void LiveObjectsBase::updateParameter(const LiveObjects_parameter param, 
 
 template<typename LOtH>
 inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
-  if(m_Protocol == MQTT) easyDataPayload[JSONVALUE][label] = value;
+  if(m_Protocol == MQTT)
+  {
+    if(m_Encoding == TEXT) easyDataPayload[JSONVALUE][label] = value;
+    else 
+    {
+      outputDebug(WARN,"BINARY Encoding active, adding only value, label skipped...");
+      addToStringPayload(value);
+    }
+  }
   else
   {
-    outputDebug(WARN,"SMS protocol active, sending only value, label skipped...");
     addToStringPayload(value);
   }
 }
@@ -317,8 +335,15 @@ inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
 template<typename T>
 inline void LiveObjectsBase::addToPayload(T value)
 {
-  if(m_Protocol == MQTT) outputDebug(ERR, "Odd number of parameters in addToPayload!");
-  addToStringPayload(value);
+  if(m_Protocol == MQTT)
+  {
+    if(m_Encoding == TEXT) outputDebug(WARN,"Cannot add value without label to JsonPayload, skipping...");
+    else addToStringPayload(value);
+  }
+  else
+  {
+    addToStringPayload(value);
+  }
 }
 
 template<typename T, typename E, typename R, typename ... Args>
@@ -360,13 +385,13 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
     default:
       Serial.print(item);
   }
-  if(String(item)!=".") outputDebug(TEXT,args...);
+  if(String(item)!=".") outputDebug(TXT,args...);
 }
 
 template<typename T,typename ... Args>
 void LiveObjectsBase::addToStringPayload(T val, Args ... args)
 {
-  if(m_Mode == Mode::BINARY) m_sPayload+=ToHex(val);
+  if(m_Encoding == BINARY) m_sPayload+=ToHex(val);
   else 
   {
     m_sPayload+=val;
@@ -403,7 +428,7 @@ class LiveObjectsCellular : public LiveObjectsBase
     LiveObjectsCellular(const LiveObjectsCellular&)  = delete;
     LiveObjectsCellular& operator== (const LiveObjectsCellular&) =  delete;
   public:
-    void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
+    void begin(Protocol p=MQTT, Encoding s=TEXT, bool bDebug=true) override;
     void addNetworkInfo() override;
     void sendData();
   private:
@@ -462,7 +487,7 @@ class LiveObjectsWiFi : public LiveObjectsBase
     LiveObjectsWiFi(const LiveObjectsWiFi&)  = delete;
     LiveObjectsWiFi& operator== (const LiveObjectsWiFi&) =  delete;
   public:
-    void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
+    void begin(Protocol p=MQTT, Encoding s=TEXT, bool bDebug=true) override;
     void addNetworkInfo() override;
   private:
     void connectNetwork() override;

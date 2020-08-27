@@ -11,7 +11,9 @@ LiveObjectsBase::LiveObjectsBase()
     ,m_pMqttclient(nullptr)
     ,m_sPayload()
     ,m_bSubCMD(false)
-    ,lastKeepAliveNetwork(20000)
+    ,lastKeepAliveNetwork(10000)
+    ,m_Security(NONE)
+    ,m_sDecoder()
 {
 }
 LiveObjectsBase::~LiveObjectsBase()
@@ -165,13 +167,13 @@ void LiveObjectsBase::configurationManager(int messageSize) {
     if(m_bDebug)
     {
     serializeJsonPretty(configIn, Serial);
-    outputDebug(TEXT);
+    outputDebug(TXT);
     }
     configOut=configIn;
     JsonObject obj =  configOut[JSONCFG];
     LiveObjects_parameter tmp("",nullptr,BINR,T_BOOL,nullptr);
     for(auto el : obj)
-    {
+    { 
       tmp.label = el.key().c_str();
       int index = parameters.find(&tmp);
       if(index > -1)
@@ -231,11 +233,10 @@ void LiveObjectsBase::commandManager() {
   if(m_bDebug)
   {
   serializeJsonPretty(cmdIn, Serial);
-  outputDebug(TEXT);
+  outputDebug(TXT);
   }
   for (uint8_t i = 0; i < commands.size(); i++) // only with MQTT or SMS !!
     if (cmdIn[F("req")] == commands[i]->label) {
-      cmdOut[JSONCID] = cmdIn[JSONCID];
       String response;
       commands[i]->callback(cmdIn[F("arg")].as<String>(), response);
       if (response.length() != 0)
@@ -291,18 +292,32 @@ void LiveObjectsBase::onMQTTmessage(int messageSize) {
 
 void LiveObjectsBase::sendData() {
 
-  easyDataPayload[JSONMODEL] = JSONMODELNAME;
-  publishMessage(MQTT_PUBDATA, easyDataPayload);
-  easyDataPayload.clear();
+  if(m_Protocol == MQTT)
+  {
+    if(m_Encoding==TEXT)
+    {
+      easyDataPayload[JSONMODEL] = JSONMODELNAME;
+      publishMessage(m_sTopic, easyDataPayload);
+      easyDataPayload.clear();
+    }
+    else publishMessage(m_sTopic+m_sDecoder, m_sPayload);
+  }
+  else publishMessage(m_sTopic+m_sDecoder,m_sPayload);
 
+  clearPayload();
 }
 
+
 void LiveObjectsBase::sendData(const String customPayload) {
-  StaticJsonDocument<PAYLOAD_DATA_SIZE> payload;
-  deserializeJson(payload, customPayload);
-  if (!payload.containsKey(JSONMODEL))
-    payload[JSONMODEL] = JSONMODELNAME;
-  publishMessage(MQTT_PUBDATA, payload);
+  if(m_Protocol == MQTT && m_Encoding == TEXT)
+  {
+    StaticJsonDocument<PAYLOAD_DATA_SIZE> payload;
+    deserializeJson(payload, customPayload);
+    if (!payload.containsKey(JSONMODEL)) payload[JSONMODEL] = JSONMODELNAME;
+    publishMessage(m_sTopic, payload);
+  }
+  else publishMessage(m_sTopic, const_cast<String&>(customPayload));
+  clearPayload();
 }
 
 void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload) {
@@ -310,7 +325,7 @@ void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload)
   if(m_bDebug)
   {
   serializeJsonPretty(payload, Serial);
-  outputDebug(TEXT);
+  outputDebug(TXT);
   }
   if( measureJson(payload) >= PAYLOAD_DATA_SIZE )
   {
@@ -322,10 +337,40 @@ void LiveObjectsBase::publishMessage(const String& topic, JsonDocument& payload)
   serializeJson(payload, *m_pMqttclient);
   m_pMqttclient->endMessage();
 }
+void LiveObjectsBase::publishMessage(const String& topic, String& payload) {
+  outputDebug(INFO,"Publishing message on topic: ", topic);
+  outputDebug(INFO, payload);
+  if( payload.length() >= PAYLOAD_DATA_SIZE )
+  {
+    outputDebug(ERR,"Message size is to big, aborting send command.");
+    return;
+  }
+  m_pMqttclient->beginMessage(topic);
+  for(int i=0;i<m_sPayload.length();i+=2)
+    m_pMqttclient->write(hexBinary(m_sPayload[i],m_sPayload[i+1]));
+  m_pMqttclient->endMessage();
+}
 
 /******************************************************************************
    LIVE OBJECTS
  ******************************************************************************/
+void LiveObjectsBase::begin(Protocol p, Encoding e, bool d)
+{
+  m_Protocol = p;
+  m_Encoding = e;
+  m_bDebug = d;
+  if(e==TEXT) m_sTopic = MQTT_PUBDATA;
+  else m_sTopic = MQTT_PUBDATA_BINARY;
+  if(p==MQTT)
+  {
+    if(m_pMqttclient!= nullptr)
+    {
+      m_pMqttclient->stop();
+      delete m_pMqttclient;
+      m_pMqttclient=nullptr;
+    }
+  }
+}
 
 void LiveObjectsBase::loop() {
   if (networkStatus == CONNECTED) {
@@ -333,13 +378,21 @@ void LiveObjectsBase::loop() {
     if(m_Protocol == MQTT) m_pMqttclient->poll();
   }
 }
-void LiveObjectsBase::setProtocol(Protocol p, Mode mode)
+void LiveObjectsBase::changeConfiguration(Protocol p,Security s, Encoding mode)
 {
-  m_bInitialized = false;
-  m_bInitialMqttConfig = false;
-  m_bSubCMD=false;
-  begin(p,mode,m_bDebug);
-  connect();
+  m_Security=s;
+  if(p!= m_Protocol || mode != m_Encoding)
+  {
+    m_bInitialized = false;
+    m_bInitialMqttConfig = false;
+    m_bSubCMD=false;
+    begin(p,mode,m_bDebug);
+    connect();
+  }
+}
+void LiveObjectsBase::setSecurity(Security s)
+{
+  m_Security = s;
 }
 void LiveObjectsBase::enableDebug(bool b)
 {
@@ -349,23 +402,30 @@ void LiveObjectsBase::setClientID(const String id)
 {
   m_sMqttid = id;
 }
+
+void LiveObjectsBase::setDecoder(String s)
+{
+  m_sDecoder = "/";
+  m_sDecoder += s;
+}
+
 void LiveObjectsBase::addTimestamp(time_t timestamp)
 {
   char bufer[sizeof("2011-10-08T07:07:09Z")];
   strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
-  if(m_Protocol == SMS)
+  if(m_Protocol == MQTT && m_Encoding==TEXT) easyDataPayload["timestamp"]=bufer;
+  else
   {
     String s = bufer;
     addToStringPayload(s);
   }
-  else easyDataPayload["timestamp"]=bufer;
   
     
 }
-void LiveObjectsBase::addLocation(double lat, double lon, float alt)
+void LiveObjectsBase::addLocation(double lat, double lon, double alt)
 {
-  if(m_Protocol == SMS) addToStringPayload(lat,lon,alt);
-  else addToPayload(easyDataPayload.createNestedObject("location"),"lat",lat,"lon",lon,"alt",alt);
+  if(m_Protocol == MQTT && m_Encoding==TEXT) addToPayload(easyDataPayload.createNestedObject("location"),"lat",lat,"lon",lon,"alt",alt);
+  else addToStringPayload(lat,lon,alt);
 }
 
 void LiveObjectsBase::clearPayload()
@@ -402,7 +462,7 @@ void LiveObjectsBase::connectMQTT()
   outputDebug(INFO,"Connecting to MQTT broker ",MQTT_BROKER,":",m_nPort);
 
 
-  while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(TEXT,".");
+  while (!m_pMqttclient->connect(MQTT_BROKER, m_nPort)) outputDebug(TXT,".");
   outputDebug(INFO,"You're connected to the MQTT broker");
 
   if(parameters.size()>0)m_pMqttclient->subscribe(MQTT_SUBCFG);
@@ -434,8 +494,7 @@ void LiveObjectsBase::addPowerStatus()
   // outputDebug(INFO,  DATA);
   // outputDebug(INFO,  power);
   if(bat) voltage = analogRead(ADC_BATTERY) * (4.3 / 1023.0);
-  if(m_Protocol==SMS) addToStringPayload((charging ? 1 : (!bat && power ? 1 : power)), bat ,charging, ( bat ? voltage : 0.));
-  else
+  if(m_Protocol == MQTT && m_Encoding==TEXT)
   {
     addToPayload(easyDataPayload[JSONVALUE].createNestedObject("powerStatus"),
                  "external_power",(charging? true : ((!bat && power)?true:power))
@@ -443,6 +502,7 @@ void LiveObjectsBase::addPowerStatus()
                 ,"battery_charging", charging
                 ,"battery_voltage",voltage);
   }
+  else addToStringPayload((charging ? true : (!bat && power ? true : power)), bat ,charging, ( bat ? voltage : 0.));
   #endif
 }
 
@@ -470,20 +530,12 @@ LiveObjectsCellular::LiveObjectsCellular()
 LiveObjectsCellular::~LiveObjectsCellular()
 {}
 
-void LiveObjectsCellular::begin(Protocol p, Mode s, bool bDebug)
+void LiveObjectsCellular::begin(Protocol p, Encoding s, bool bDebug)
 {
-  m_Protocol=p;
-  m_Mode = s;
-  m_bDebug = bDebug;
+  LiveObjectsBase::begin(p,s,bDebug);
   if(p==MQTT)
   {
-    if(m_pMqttclient!= nullptr)
-      {
-        m_pMqttclient->stop();
-        delete m_pMqttclient;
-        m_pMqttclient=nullptr;
-      }
-    switch(s)
+    switch(m_Security)
     {
       case TLS:
       #ifdef NBD
@@ -561,11 +613,11 @@ void LiveObjectsCellular::connectNetwork()
     outputDebug(INFO,"Connecting to cellular network");
     #ifdef NBD
     while (m_Acces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
-      outputDebug(TEXT,".");
+      outputDebug(TXT,".");
     outputDebug();
     #elif defined GSMD
-    while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)) outputDebug(TEXT, ".");
-    while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TEXT, ".");
+    while ((m_Acces.begin(SECRET_PINNUMBER.c_str()) != GSM_READY)) outputDebug(TXT, ".");
+    while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TXT, ".");
     outputDebug();
     #endif
     outputDebug(INFO,"You're connected to the network");
@@ -634,14 +686,9 @@ void LiveObjectsCellular::messageCallback(int msg)
 
 void LiveObjectsCellular::addNetworkInfo()
 {
-  String strength=m_Scanner.getSignalStrength();
+  String strength= m_Scanner.getSignalStrength();
   String carrier = m_Scanner.getCurrentCarrier();
-  #ifdef NBD
-  if(m_Protocol == SMS) addToStringPayload((m_Acces.status() == NB_READY),strength,carrier);
-  #elif defined GSMD
-  if(m_Protocol == SMS) addToStringPayload(m_Acces.status() == GSM_READY,strength,carrier);
-  #endif
-  else 
+  if(m_Protocol == MQTT && m_Encoding==TEXT) 
   {
     bool status;
     #ifdef NBD
@@ -651,6 +698,11 @@ void LiveObjectsCellular::addNetworkInfo()
     #endif
     addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"connection_status",status,"strength",strength,"carrier",carrier);
   }
+  #ifdef NBD
+  else addToStringPayload((m_Acces.status() == NB_READY),strength,carrier);
+  #elif defined GSMD
+  else addToStringPayload(m_Acces.status() == GSM_READY,strength,carrier);
+  #endif
 }
 
 void LiveObjectsCellular::sendData()
@@ -658,7 +710,7 @@ void LiveObjectsCellular::sendData()
   if(m_Protocol == MQTT) LiveObjectsBase::sendData();
   else
   {
-    if(m_sPayload.length() > 130)
+    if(m_sPayload.length() > 160)
     {
       outputDebug(ERR,"Payload to big, skipping sending...");
       return;
@@ -669,9 +721,9 @@ void LiveObjectsCellular::sendData()
       return;
     }
     outputDebug(INFO,"Publishing message: ", m_sPayload);
-    if(m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str())!=1) outputDebug(ERR,"Error! begin");
+    if(m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str())!=1) outputDebug(ERR,"Error occured while sending SMS");
     m_Sms.print(m_sPayload);
-    if(m_Sms.endSMS()!=1) outputDebug(ERR,"Error! end");
+    if(m_Sms.endSMS()!=1) outputDebug(ERR,"Error occured while sending SMS");
     m_sPayload="";
   }
 }
@@ -694,25 +746,16 @@ LiveObjectsWiFi::~LiveObjectsWiFi()
 
 
 
-void LiveObjectsWiFi::begin(Protocol p, Mode s, bool bDebug)
+void LiveObjectsWiFi::begin(Protocol p, Encoding s, bool bDebug)
 {
-  m_bDebug = bDebug;
-  m_Protocol=p;
-  m_Mode = s;
+  LiveObjectsBase::begin(p,s,bDebug);
   if(p != MQTT)
   {
     outputDebug(ERR,"Wrong protocol! This board support only MQTT! Stopping....");
     while(true);
   }
-  if(m_pMqttclient!= nullptr)
+  switch(m_Security)
   {
-    m_pMqttclient->stop();
-    delete m_pMqttclient;
-    m_pMqttclient=nullptr;
-  } 
-  switch(s)
-  {
-    
     case TLS:
     #ifdef ARDUINO_SAMD_MKR1000
       outputDebug(ERR,"TLS NOT COMPATIBLE, STOPPING...");
@@ -760,7 +803,7 @@ void LiveObjectsWiFi::connectNetwork()
 
   while (WiFi.begin(SECRET_SSID.c_str(), SECRET_WIFI_PASS.c_str()) != WL_CONNECTED) {
     // failed, retry
-    outputDebug(TEXT,".");
+    outputDebug(TXT,".");
     delay(1000);
   }
    outputDebug();
@@ -809,16 +852,12 @@ void LiveObjectsWiFi::messageCallback(int msg)
 
 void LiveObjectsWiFi::addNetworkInfo()
 {
-  //JsonObject obj = easyDataPayload[JSONVALUE].createNestedObject("networkInfo");
-  // obj["mac"] = m_sMac;
-  // obj["ssid"] = SECRET_SSID;
-  // obj["ip"] = m_sIP;
   String tmp;
   tmp = WiFi.RSSI();
   tmp += " dbm";
-  //obj["strength"] = tmp;
-  addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"mac",m_sMac,"ssid",SECRET_SSID,"ip",m_sIP,"strength",tmp);
-
+  if(m_Protocol == MQTT && m_Encoding==TEXT)  addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"mac",m_sMac,"ssid",SECRET_SSID,"ip",m_sIP,"strength",tmp);
+  else addToPayload(m_sMac,SECRET_SSID,m_sIP,tmp);
 }
+
 #endif
 LiveObjects& lo = LiveObjects::get();

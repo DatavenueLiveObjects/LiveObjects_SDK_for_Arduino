@@ -34,44 +34,14 @@ String ToHex(String x)
     hex+=ToHexT(x[i]);
   return hex;
 }
-String ToHex(int x)
-{
-  return ToHexT(x);
-}
-String ToHex(long x)
-{
-  return ToHexT(x);
-}
-String ToHex(float x)
-{
-  return ToHexT(x);
-}
-String ToHex(double x)
-{
-  return ToHexT(x);
-}
-String ToHex(long long x)
-{
-  return ToHexT(x);
-}
-String ToHex(int8_t x)
-{
-  return ToHexT(x);
-}
 
-String ToHex(unsigned int x)
+uint8_t hexBinary(char msb, char lsb)
 {
-  return ToHexTU(x);
-}
-String ToHex(unsigned long x)
-{
-  return ToHexTU(x);
-}
-String ToHex(unsigned long long x)
-{
-  return ToHexTU(x);
-}
-String ToHex(uint8_t x)
-{
-  return ToHexTU(x);
+  auto hexToDec = [](char x)
+  {
+    if(x>='a' && x<='f') return 10 + (x-'a');
+    else return x-'0';
+  };
+
+  return (hexToDec(msb)<<4)|hexToDec(lsb); 
 }
