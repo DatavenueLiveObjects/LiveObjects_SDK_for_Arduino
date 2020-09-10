@@ -434,6 +434,13 @@ void LiveObjectsBase::clearPayload()
   m_sPayload="";
 }
 
+void LiveObjectsBase::addObjectToPayload(String name, JsonObject& obj)
+{
+  JsonObject tmp = easyDataPayload[JSONVALUE].createNestedObject(name);
+  for( JsonPair item : obj)
+    tmp[item.key().c_str()] = item.value();
+}
+
 bool LiveObjectsBase::debugEnabled()
 {
   return m_bDebug;
@@ -525,7 +532,26 @@ LiveObjectsCellular::LiveObjectsCellular()
   #ifdef GSMD
   ,m_GPRSAcces()
   #endif
-{}
+{
+  String num = SECRET_SERVER_MSISDN;
+  for (int i = 0; i < num.length(); i+=2)
+    {
+        if ((i + 1) == num.length() && num.length() % 2 == 1)
+        {
+            num += num[i];
+            num[i] = 'F';
+        }
+        else
+        {
+        char tmp = num[i + 1];
+        num[i + 1] = num[i];
+        num[i] = tmp;
+        }
+    }
+    m_sNumber += ToHexT((char)(num.length() - 1));
+    m_sNumber += "A1";
+    m_sNumber += num;
+}
 
 LiveObjectsCellular::~LiveObjectsCellular()
 {}
@@ -639,6 +665,9 @@ void LiveObjectsCellular::connectNetwork()
       }
     }
   }
+  if(m_Encoding==BINARY) MODEM.send("AT+CMGF=0");
+  else MODEM.send("AT+CMGF=1");
+  delay(200);
 }
 
 
@@ -663,13 +692,43 @@ void LiveObjectsCellular::checkNetwork()
         if(c==-1)break;
         msg+=(char)c;
       }
-      outputDebug(INFO,"Received command: ",msg);
-      LiveObjects_command cmd(msg,nullptr);
+      String s;
+      if(m_Encoding==TEXT) s = msg;
+      else
+      {
+        s = parseCommand(msg);
+        s = from7bit(s);
+      }
+      
+      outputDebug(INFO,"Received command: ",s);
+      LiveObjects_command cmd(s,nullptr);
       int index = commands.find(&cmd);
-      if(index >= 0 ) commands[index]->callback("",msg);
+      if(index >= 0 )
+      {
+        outputDebug(INFO,"Found command");
+        commands[index]->callback("",msg);
+      }
       else outputDebug(INFO,"Unknown command");
+      m_Sms.flush();
     }
   }
+}
+
+String LiveObjectsCellular::parseCommand(String inputString)
+{
+  String len; len += inputString[0]; len += inputString[1];
+  int index = 2;
+  index += 2 * strtol(len.c_str(), nullptr, 16);
+  index += 2;
+  len = ""; len += inputString[index]; index++; len += inputString[index]; index++;
+  index += 2;
+  index += (int)ceil(strtol(len.c_str(), nullptr, 16)/2.)*2;
+  index += 2 * 9;
+  len = ""; len += inputString[index]; index++; len += inputString[index]; index++;
+  String retVal;
+  retVal = inputString.substring(index);
+  //outputDebug(INFO, "PARSED: ", retVal);
+  return retVal;
 }
 
 
@@ -720,10 +779,33 @@ void LiveObjectsCellular::sendData()
       outputDebug(WARN,"Payload is empty, skipping...");
       return;
     }
-    outputDebug(INFO,"Publishing message: ", m_sPayload);
-    if(m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str())!=1) outputDebug(ERR,"Error occured while sending SMS");
-    m_Sms.print(m_sPayload);
-    if(m_Sms.endSMS()!=1) outputDebug(ERR,"Error occured while sending SMS");
+    if(m_Encoding==TEXT)
+    {
+      outputDebug(INFO,"Publishing message: ", m_sPayload);
+      if(m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str())!=1) outputDebug(ERR,"Error occured while sending SMS");
+      m_Sms.print(m_sPayload);
+      if(m_Sms.endSMS()!=1) outputDebug(ERR,"Error occured while sending SMS");
+    }
+    else
+    {
+      outputDebug(INFO,"Payload before conversion: ",m_sPayload);
+      String msg;
+      static String fixedStart = "001100";
+      static String fixedInfo = "0000FF";
+      msg+=fixedStart;
+      msg+=m_sNumber;
+      msg+= fixedInfo;
+      msg+=ToHex((char)m_sPayload.length());
+      msg+=to7bit(m_sPayload);
+      int msgSize = (msg.length()-2)/2;
+      msg+='\x1A';
+      outputDebug(INFO,"MEssage len: ",msgSize);
+      outputDebug(INFO,"Publishing message: ", msg);
+      MODEM.sendf("AT+CMGS=%d\r", msgSize);
+      delay(100);
+      MODEM.sendf(msg.c_str());
+
+    }
     m_sPayload="";
   }
 }

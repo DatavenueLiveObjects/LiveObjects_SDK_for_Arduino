@@ -30,7 +30,7 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
-#define JSONMODELNAME "github_sample_MKRNB"
+#define JSONMODELNAME "Orange_Pollution_Shield"
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
@@ -225,6 +225,7 @@ public:
     void addToPayload(const String label, LOtH value);
     template<typename T>
     void addToPayload(T val);
+    void addObjectToPayload(String name, JsonObject& obj);
 protected:
     template<typename T, typename E, typename ... Args>
     void addToPayload(JsonObject obj, T key, E val, Args ... args);
@@ -432,6 +433,7 @@ class LiveObjectsCellular : public LiveObjectsBase
     void addNetworkInfo() override;
     void sendData();
   private:
+    String parseCommand(String inputString);
     void connectNetwork() override;
     void checkNetwork() override;
     void disconnectNetwork() override;
@@ -448,6 +450,7 @@ class LiveObjectsCellular : public LiveObjectsBase
   GSMScanner m_Scanner;
   GSM_SMS m_Sms;
   #endif
+  String m_sNumber;
 };
 
 typedef LiveObjectsCellular LiveObjects;

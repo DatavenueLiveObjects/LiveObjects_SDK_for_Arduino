@@ -99,6 +99,9 @@ int LinkedList<T>::find(T* element)
  *                  Hex converter
  * 
  * ****************************************************************************/
+
+String to7bit(String inputString);
+String from7bit(String inputString);
 template<typename T>
 String ToHexT(T val)
 {
@@ -118,6 +121,12 @@ String ToHexT(T val)
     if(x<16) ret+='0';
     memset(buff,'\0',5);
     itoa(x,buff,16);
+    int curr = 0;
+        while (buff[curr] != '\0')
+        {
+            if (buff[curr] > 90) buff[curr] -= 32;
+            curr++;
+        }
     ret+=buff;
   }
   return ret;
