@@ -494,7 +494,7 @@ void LiveObjectsBase::addPowerStatus()
   #ifdef PMIC_PRESENT
   byte DATA = readRegister(SYSTEM_STATUS_REGISTER);
   bool charging = (DATA & ((1<<5)|(1<<4)))!=0;
-  bool bat = (DATA & (1<<0)) == 0;
+  bool bat = (DATA & (1<<0)) == 0 || charging;
   bool power=(DATA & (1<<2));
   double voltage=0.;
   // outputDebug(INFO,  DATA&0b11000000u);
@@ -509,7 +509,7 @@ void LiveObjectsBase::addPowerStatus()
                 ,"battery_charging", charging
                 ,"battery_voltage",voltage);
   }
-  else addToStringPayload((charging ? true : (!bat && power ? true : power)), bat ,charging, ( bat ? voltage : 0.));
+  else addToStringPayload((charging ? true : (!bat && power ? true : power)), bat ,charging, voltage);
   #endif
 }
 
@@ -699,14 +699,16 @@ void LiveObjectsCellular::checkNetwork()
         s = parseCommand(msg);
         s = from7bit(s);
       }
-      
-      outputDebug(INFO,"Received command: ",s);
-      LiveObjects_command cmd(s,nullptr);
+      int spaceIndex = s.indexOf(' ');
+      String cmd_name = s.substring(0,spaceIndex);
+      s = s.substring(spaceIndex+1);
+      outputDebug(INFO,"Received command: ",cmd_name);
+      LiveObjects_command cmd(cmd_name,nullptr);
       int index = commands.find(&cmd);
       if(index >= 0 )
       {
         outputDebug(INFO,"Found command");
-        commands[index]->callback("",msg);
+        commands[index]->callback(s,msg);
       }
       else outputDebug(INFO,"Unknown command");
       m_Sms.flush();
