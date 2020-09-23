@@ -15,6 +15,7 @@
 #define MQTT_BROKER "liveobjects.orange-business.com"
 #define MQTT_USER "json+device"
 #define MQTT_PUBDATA "dev/data"
+#define MQTT_PUBDATA_BINARY "dev/v1/data/binary"
 #define MQTT_SUBCFG "dev/cfg/upd"
 #define MQTT_PUBCFG "dev/cfg"
 #define MQTT_SUBCMD "dev/cmd"
@@ -29,7 +30,7 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
-#define JSONMODELNAME "github_sample_MKRNB"
+#define JSONMODELNAME "Orange_Pollution_Shield"
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
@@ -81,13 +82,17 @@ enum Protocol
   //,LORA
 };
 
-enum Mode
+enum Security
 {
   NONE
   ,TLS
-  ,BINARY
-  ,TXT
   //,DTLS
+};
+
+enum Encoding
+{
+  BINARY
+  ,TEXT
 };
 
 enum LOG_MSGTYPE
@@ -95,7 +100,7 @@ enum LOG_MSGTYPE
   INFO,
   WARN,
   ERR,
-  TEXT
+  TXT
 };
 
 typedef void (*onParameterUpdateCallback)();
@@ -105,7 +110,6 @@ class LiveObjectsBase
 {
 protected:
   LiveObjectsBase();
-  ~LiveObjectsBase();
   LiveObjectsBase(const LiveObjectsBase&) = delete;
   LiveObjectsBase& operator==(const LiveObjectsBase&) = delete;
 
@@ -144,34 +148,36 @@ public:
 ******************************************************************************/
 
 public:
-  void setProtocol(Protocol p);
-  void setMode(Mode s);
+  void changeConfiguration(Protocol p,Security s, Encoding mode);
+  void setSecurity(Security s);
   void enableDebug(bool b);
   void setClientID(const String id);
+  void setDecoder(String s);
 
 public:
   bool debugEnabled();
 
 public:
   void addTimestamp(time_t timestamp);
-  void addLocation(double lat, double lon, float alt);
-  void addPowerStatus();
+  void addLocation(double lat, double lon, double alt);
+  virtual void addPowerStatus()=0;
   virtual void addNetworkInfo()=0;
   void clearPayload();
 
 public:
   void addCommand(const String name, onCommandCallback callback);
   void publishMessage(const String& topic, JsonDocument& payload);
+  void publishMessage(const String& topic, String& payload);
   void connect();
   void networkCheck();
   void disconnect();
-  void onMQTTmessage(int messageSize);
+  //void onMQTTmessage(int messageSize);
   void sendData();
   void sendData(const String customPayload);
   void loop();
 
 protected:
-  virtual void begin(Protocol, Mode, bool) =0;
+  virtual void begin(Protocol p, Encoding e, bool d);
   virtual void connectNetwork() =0;
   virtual void checkNetwork() =0;
   virtual void disconnectNetwork() =0;
@@ -182,22 +188,27 @@ protected:
 protected:
   template<typename T, typename ... Args>
   void outputDebug(LOG_MSGTYPE type,T item, Args&... args);
-  void outputDebug(LOG_MSGTYPE type = TEXT){Serial.print('\n');};
-private:
-  void checkMQTT();
-  void connectMQTT();
-  void disconnectMQTT();
+  void outputDebug(LOG_MSGTYPE type = TXT){Serial.print('\n');};
+  void messageDebug(String& topic, JsonDocument& doc, bool r = false);
+protected:
+  virtual void checkMQTT()=0;
+  virtual void connectMQTT()=0;
+  virtual void disconnectMQTT()=0;
+  virtual void stopMQTT()=0;
+  virtual void sendMQTT(String& topic, JsonDocument& doc)=0;
+  virtual void sendMQTT(String& topic, String& doc)=0;
+  virtual void deserializeMessage(JsonDocument& doc)=0;
 
 
-private:
+protected:
  /******************************************************************************
    CONFIGURATION MANAGER
  ******************************************************************************/
-    void configurationManager(int messageSize =-1);
+    void configurationManager(String topic,int messageSize =-1);
 /******************************************************************************
    COMMAND MANAGEMENT
  ******************************************************************************/
-    void commandManager();
+    void commandManager(String topic);
 public:
 /******************************************************************************
    TEMPLATE FUNCTIONS
@@ -218,6 +229,7 @@ public:
     void addToPayload(const String label, LOtH value);
     template<typename T>
     void addToPayload(T val);
+    void addObjectToPayload(String name, JsonObject& obj);
 protected:
     template<typename T, typename E, typename ... Args>
     void addToPayload(JsonObject obj, T key, E val, Args ... args);
@@ -236,17 +248,17 @@ protected:
    VARIABLES
 ******************************************************************************/
 private:
-    unsigned long lastKeepAliveMQTT =  0;
-    unsigned long lastKeepAliveNetwork  = 0;
+    unsigned long lastKeepAliveNetwork;
 
 protected:
-    Client* m_pClient;
-    MqttClient *m_pMqttclient;
     String m_sMqttid;
     String m_sPayload;
+    String m_sTopic;
+    String m_sDecoder;
     uint16_t m_nPort;
     Protocol m_Protocol;
-    Mode m_Mode;
+    Security m_Security;
+    Encoding m_Encoding;
     bool m_bInitialMqttConfig;
     bool m_bDebug;
     bool m_bCertLoaded;
@@ -257,11 +269,13 @@ protected:
  ******************************************************************************/
     void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    #ifndef ESP8266
     void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    #endif
+    void paramTyper(const String& name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, uint16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, uint32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
@@ -282,7 +296,7 @@ inline void LiveObjectsBase::addParameter(const String name, LOtA &variable) {
 }
 template<typename LOtB>
 inline void LiveObjectsBase::addParameter(const String name, LOtB &variable, LiveObjects_parameterType type) {
-  onParameterUpdateCallback ptr = NULL;
+  onParameterUpdateCallback ptr = nullptr;
   paramTyper(name, &variable, type, ptr);
 }
 template<typename LOtC>
@@ -308,10 +322,17 @@ inline void LiveObjectsBase::updateParameter(const LiveObjects_parameter param, 
 
 template<typename LOtH>
 inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
-  if(m_Protocol == MQTT) easyDataPayload[JSONVALUE][label] = value;
+  if(m_Protocol == MQTT)
+  {
+    if(m_Encoding == TEXT) easyDataPayload[JSONVALUE][label] = value;
+    else 
+    {
+      outputDebug(WARN,"BINARY Encoding active, adding only value, label skipped...");
+      addToStringPayload(value);
+    }
+  }
   else
   {
-    outputDebug(WARN,"SMS protocol active, sending only value, label skipped...");
     addToStringPayload(value);
   }
 }
@@ -319,8 +340,15 @@ inline void LiveObjectsBase::addToPayload(const String label, LOtH value) {
 template<typename T>
 inline void LiveObjectsBase::addToPayload(T value)
 {
-  if(m_Protocol == MQTT) outputDebug(ERR, "Odd number of parameters in addToPayload!");
-  addToStringPayload(value);
+  if(m_Protocol == MQTT)
+  {
+    if(m_Encoding == TEXT) outputDebug(WARN,"Cannot add value without label to JsonPayload, skipping...");
+    else addToStringPayload(value);
+  }
+  else
+  {
+    addToStringPayload(value);
+  }
 }
 
 template<typename T, typename E, typename R, typename ... Args>
@@ -362,13 +390,13 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
     default:
       Serial.print(item);
   }
-  if(String(item)!=".") outputDebug(TEXT,args...);
+  if(String(item)!=".") outputDebug(TXT,args...);
 }
 
 template<typename T,typename ... Args>
 void LiveObjectsBase::addToStringPayload(T val, Args ... args)
 {
-  if(m_Mode == Mode::BINARY) m_sPayload+=ToHex(val);
+  if(m_Encoding == BINARY) m_sPayload+=ToHex(val);
   else 
   {
     m_sPayload+=val;
@@ -379,6 +407,36 @@ void LiveObjectsBase::addToStringPayload(T val, Args ... args)
 }
 
 extern const String SECRET_LIVEOBJECTS_API_KEY;
+
+#ifdef ARDUINO_ARCH_SAMD
+ /******************************************************************************
+   SAMD BOARDS BASE CLASS
+ ******************************************************************************/
+
+class LiveObjectsSAMD : public LiveObjectsBase
+{
+protected:
+    LiveObjectsSAMD();
+    ~LiveObjectsSAMD();
+    LiveObjectsSAMD(const LiveObjectsSAMD&)  = delete;
+    LiveObjectsSAMD& operator== (const LiveObjectsSAMD&) =  delete;
+
+protected:
+  void checkMQTT() override;
+  void connectMQTT() override;
+  void disconnectMQTT() override;
+  void stopMQTT()override;
+  void sendMQTT(String& topic, JsonDocument& doc)override;
+  void sendMQTT(String& topic, String& doc)override;
+  void deserializeMessage(JsonDocument& doc)override;
+  void onMQTTmessage(int messageSize);
+
+public:
+  void addPowerStatus()override;
+protected:
+  Client* m_pClient;
+  MqttClient *m_pMqttclient;
+};
 
  /******************************************************************************
    Cellular BOARDS CLASS
@@ -391,7 +449,7 @@ extern const String SECRET_LIVEOBJECTS_API_KEY;
 #include <MKRGSM.h>
 #endif
 #if defined NBD || defined GSMD
-class LiveObjectsCellular : public LiveObjectsBase
+class LiveObjectsCellular : public LiveObjectsSAMD
 {
   public:
     static LiveObjectsCellular& get()
@@ -405,10 +463,11 @@ class LiveObjectsCellular : public LiveObjectsBase
     LiveObjectsCellular(const LiveObjectsCellular&)  = delete;
     LiveObjectsCellular& operator== (const LiveObjectsCellular&) =  delete;
   public:
-    void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
+    void begin(Protocol p=MQTT, Encoding s=TEXT, bool bDebug=true) override;
     void addNetworkInfo() override;
     void sendData();
   private:
+    String parseCommand(String inputString);
     void connectNetwork() override;
     void checkNetwork() override;
     void disconnectNetwork() override;
@@ -425,6 +484,7 @@ class LiveObjectsCellular : public LiveObjectsBase
   GSMScanner m_Scanner;
   GSM_SMS m_Sms;
   #endif
+  String m_sNumber;
 };
 
 typedef LiveObjectsCellular LiveObjects;
@@ -450,7 +510,7 @@ extern const String SECRET_APN_PASS;
 #define WIFI
 #endif
 #ifdef WIFI
-class LiveObjectsWiFi : public LiveObjectsBase
+class LiveObjectsWiFi : public LiveObjectsSAMD
 {
   public:
     static LiveObjectsWiFi& get()
@@ -464,7 +524,7 @@ class LiveObjectsWiFi : public LiveObjectsBase
     LiveObjectsWiFi(const LiveObjectsWiFi&)  = delete;
     LiveObjectsWiFi& operator== (const LiveObjectsWiFi&) =  delete;
   public:
-    void begin(Protocol p=MQTT, Mode s=TLS, bool bDebug=true) override;
+    void begin(Protocol p=MQTT, Encoding s=TEXT, bool bDebug=true) override;
     void addNetworkInfo() override;
   private:
     void connectNetwork() override;
@@ -484,5 +544,110 @@ typedef LiveObjectsWiFi LiveObjects;
 #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 #define PMIC_PRESENT
 #endif
+#endif
+
+
+ /******************************************************************************
+   ESP8266 BOARD
+ ******************************************************************************/
+#ifdef ESP8266
+
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+class LiveObjectsESP : public LiveObjectsBase
+{
+  LiveObjectsESP();
+  ~LiveObjectsESP();
+  LiveObjectsESP(const LiveObjectsESP&)  = delete;
+  LiveObjectsESP& operator== (const LiveObjectsESP&) =  delete;
+
+  public:
+    static LiveObjectsESP& get()
+    {
+      static LiveObjectsESP e; return e;
+    }
+
+  private:
+    void connectNetwork() override;
+    void checkNetwork() override;
+    void disconnectNetwork() override;
+    static void messageCallback(char* topic, uint8_t* payload, unsigned int length);
+
+  protected:
+    void checkMQTT() override;
+    void connectMQTT() override;
+    void disconnectMQTT() override;
+    void stopMQTT()override;
+    void sendMQTT(String& topic, JsonDocument& doc)override;
+    void sendMQTT(String& topic, String& doc)override;
+    void deserializeMessage(JsonDocument& doc)override;
+    void onMQTTmessage(char* topic, uint8_t* payload, unsigned int length);
+
+  public:
+    void begin(Protocol p=MQTT, Encoding s=TEXT, bool bDebug=true) override;
+    void addPowerStatus()override;
+    void addNetworkInfo() override;
+
+  private:
+    WiFiClient* m_pClient;
+    PubSubClient* m_pMqttclient;
+    String m_sMac;
+    String m_sIP;
+    String m_sRecvBuffer;
+};
+
+extern const String SECRET_SSID;
+extern const String SECRET_WIFI_PASS;
+
+typedef LiveObjectsESP LiveObjects;
+#endif
+
+
+/******************************************************************************
+  CLASS DRAFT BOARD
+******************************************************************************/
+/*
+#ifdef COMPILER_SYMBOL_FOR_BOARD
+
+#include <necessaryLibrary.h>
+
+class className : public LiveObjectsBase
+{
+public:
+  static className& get(){
+    static className g;
+    return g;
+  }
+
+
+  private:
+    void connectNetwork() override;
+    void checkNetwork() override;
+    void disconnectNetwork() override;
+
+  protected:
+    void checkMQTT() override;
+    void connectMQTT() override;
+    void disconnectMQTT() override;
+    void stopMQTT()override;
+    void sendMQTT(String& topic, JsonDocument& doc)override;
+    void sendMQTT(String& topic, String& doc)override;
+    void deserializeMessage(JsonDocument& doc)override;
+
+  public:
+    void begin(Protocol p=MQTT, Encoding s=TEXT, bool bDebug=true) override;
+    void addPowerStatus()override;
+    void addNetworkInfo() override;
+
+  private:
+  //Necessary variables
+};
+
+typedef className LiveObjects;
+#endif
+
+*/
+
+
 
 extern LiveObjects& lo;

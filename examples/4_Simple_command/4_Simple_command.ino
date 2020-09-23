@@ -2,7 +2,7 @@
    INCLUDES
  ******************************************************************************/
 #include "arduino_secrets.h"
-#include "LiveObjects.h"
+#include <LiveObjects.h>
 
 /******************************************************************************
    USER VARIABLES
@@ -38,7 +38,8 @@ void setup() {
 
   // Declaring a simple commands hadled by the function 'blinkLED5times'.
   lo.addCommand("blink", blinkLED5times);
-  lo.begin(MQTT, TLS, true);
+  lo.setSecurity(TLS);
+  lo.begin(MQTT, TEXT, true);
   lo.connect();                          // connects to the network + Live Objects
 }
 

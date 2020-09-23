@@ -2,7 +2,7 @@
    INCLUDES
  ******************************************************************************/
 #include "arduino_secrets.h"
-#include "LiveObjects.h"
+#include <LiveObjects.h>
 /******************************************************************************
    USER VARIABLES
  ******************************************************************************/
@@ -18,7 +18,8 @@ void setup() {
   Serial.print("\n*** Live Objects for Arduino MKR boards, revision ");
   Serial.print(SW_REVISION);
   Serial.println("***");
-  lo.begin(MQTT, TLS, true);
+  lo.setSecurity(TLS);
+  lo.begin(MQTT, TEXT, true);
   lo.connect(); // connects to the network + Live Objects
 }
 
