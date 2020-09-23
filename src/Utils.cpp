@@ -9,9 +9,11 @@ byte readRegister(byte address) {
       return -1;
     }
 
+    #ifndef ESP8266
     if (Wire.requestFrom(PMIC_ADDRESS, 1, true) != 1) {
       return -1;
     }
+    #endif
 
     return Wire.read();
 }
