@@ -14,7 +14,8 @@ jobs:
          "arduino:samd:mkrnb1500",
          "arduino:samd:mkrwifi1010",
          "arduino:samd:nano_33_iot",
-         "arduino:samd:mkrvidor4000"
+         "arduino:samd:mkrvidor4000",
+         '"esp8266:esp8266:huzzah" "http://arduino.esp8266.com/stable/package_esp8266com_index.json"'
        ]
 
    steps:
