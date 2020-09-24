@@ -4,7 +4,7 @@ jobs:
  build:
    runs-on: ubuntu-latest
    env:
-     LIBRARIES: WiFi101 WiFiNINA MKRNB MKRGSM ArduinoJson VidorPeripherals
+     LIBRARIES: WiFi101 WiFiNINA MKRNB MKRGSM ArduinoJson VidorPeripherals PubSubClient
 
    strategy:
      matrix:
