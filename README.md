@@ -16,6 +16,7 @@ The code will manage the LTE-M, GSM and WiFi connection(depending on currently u
 | Arduino MKR 1500 NB | OK | OK | OK |
 | Arduino MKR VIDOR 4000 | OK | OK* | - |
 | Arduino Nano 33 IoT | OK | OK | - |
+| ESP8266 Boards(Beta) | OK | - | - |
 
 ## Prerequisites/dependecies ##
 This code needs 2 ~~3~~ external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
@@ -24,12 +25,17 @@ This code needs 2 ~~3~~ external libraries to run, that you can install using th
 - [MKRNB](https://www.arduino.cc/en/Reference/MKRNB) in order to handle the LTE-M module on **Arduino MKR NB 1500**
 - [MKRGSM](https://www.arduino.cc/en/Reference/MKRGSM) in order to handle the GSM module on **Arduino MKR GSM 1400**
 - [WiFiNINA](https://www.arduino.cc/en/Reference/WiFiNINA) in order to handle WiFi module on **Arduino MKRWIFI 1010** and **Arduino Nano 33 IoT**
-- [WiFi101](https://www.arduino.cc/en/Reference/WiFi101) in order to handle WiFi module on **Arduino MKR 1000** 
+- [WiFi101](https://www.arduino.cc/en/Reference/WiFi101) in order to handle WiFi module on **Arduino MKR 1000**
+
 - ~~[ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino~~ *
 
  \* currently integrated into this SDK, until https://github.com/arduino-libraries/ArduinoMqttClient/pull/44 fix will be merged
 
-#### Library developed by Benoît Blanchon
+#### Library For ESP8266 boards
+- [PubSubClient](https://pubsubclient.knolleary.net/) library provides a client for doing simple publish/subscribe messaging with a server that supports MQTT
+
+#### Library developed by Benoît Blanchon*
+*mandatory for both Arduino and ESP boards
 - [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily
 
 #### SAMD21 Arduino core
