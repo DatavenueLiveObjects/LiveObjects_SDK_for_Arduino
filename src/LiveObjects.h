@@ -30,7 +30,7 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
-#define JSONMODELNAME "Orange_Pollution_Shield"
+#define JSONMODELNAME "Orange_LO_Arduino_SDK"
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
