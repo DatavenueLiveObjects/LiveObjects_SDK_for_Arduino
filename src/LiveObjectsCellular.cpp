@@ -124,7 +124,17 @@ void LiveObjectsCellular::connectNetwork()
     if(m_Protocol != SMS) while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TXT, ".");
     outputDebug();
     #endif
+    if(m_Encoding==BINARY) MODEM.send("AT+CMGF=0");
+    delay(200);
     outputDebug(INFO,"You're connected to the network");
+  }
+  else
+  {
+      if(m_Protocol==MQTT) while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TXT, ".");
+      delay(100);//outputDebug(INFO, "Sending atcmgf");
+      if(m_Encoding==BINARY) MODEM.send("AT+CMGF=0");
+      else MODEM.send("AT+CMGF=1");
+      delay(200);
   }
   if(m_nPort==8883){
     if (!m_bCertLoaded) {
@@ -143,9 +153,6 @@ void LiveObjectsCellular::connectNetwork()
       }
     }
   }
-  if(m_Encoding==BINARY) MODEM.send("AT+CMGF=0");
-  else MODEM.send("AT+CMGF=1");
-  delay(200);
 }
 
 
@@ -265,6 +272,7 @@ void LiveObjectsCellular::sendData()
       if(m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str())!=1) outputDebug(ERR,"Error occured while sending SMS");
       m_Sms.print(m_sPayload);
       if(m_Sms.endSMS()!=1) outputDebug(ERR,"Error occured while sending SMS");
+      outputDebug(INFO, "Nie tutaj");
     }
     else
     {
@@ -279,7 +287,7 @@ void LiveObjectsCellular::sendData()
       msg+=to7bit(m_sPayload);
       int msgSize = (msg.length()-2)/2;
       msg+='\x1A';
-      outputDebug(INFO,"MEssage len: ",msgSize);
+      outputDebug(INFO,"Message len: ",msgSize);
       outputDebug(INFO,"Publishing message: ", msg);
       MODEM.sendf("AT+CMGS=%d\r", msgSize);
       delay(100);
