@@ -1,5 +1,5 @@
 #include "LiveObjectsWiFi.h"
-
+#ifdef WIFID
 LiveObjectsWiFi::LiveObjectsWiFi()
   :
    LiveObjectsMKR()
@@ -130,3 +130,4 @@ void LiveObjectsWiFi::addNetworkInfo()
   if(m_Protocol == MQTT && m_Encoding==TEXT)  addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"mac",m_sMac,"ssid",SECRET_SSID,"ip",m_sIP,"strength",tmp);
   else addToPayload(m_sMac,SECRET_SSID,m_sIP,tmp);
 }
+#endif

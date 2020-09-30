@@ -1,9 +1,17 @@
-#include "LiveObjectsMKR.h"
 #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_NANO_33_IOT || defined ARDUINO_SAMD_MKRVIDOR4000
-#include <WiFiNINA.h>
-#else
-#include <WiFi101.h>
+  #ifdef ARDUINO_SAMD_MKRVIDOR4000
+    #include <VidorPeripherals.h>
+  #endif
+  #include "LiveObjectsMKR.h"
+  #define WIFID
+  #include <WiFiNINA.h>
+#elif defined ARDUINO_SAMD_MKR1000
+  #include "LiveObjectsMKR.h"
+  #define WIFID
+  #include <WiFi101.h>
 #endif
+
+#ifdef WIFID
 class LiveObjectsWiFi : public LiveObjectsMKR
 {
   public:
@@ -33,3 +41,4 @@ extern const String SECRET_SSID;
 extern const String SECRET_WIFI_PASS;
 
 typedef LiveObjectsWiFi LiveObjects;
+#endif

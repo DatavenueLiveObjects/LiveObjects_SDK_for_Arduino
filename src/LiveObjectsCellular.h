@@ -2,10 +2,12 @@
 #if defined ARDUINO_SAMD_MKRNB1500
 #define NBD
 #include <MKRNB.h>
-#else
+#elif defined ARDUINO_SAMD_MKRGSM1400
 #define GSMD
 #include <MKRGSM.h>
 #endif
+
+#if defined NBD || defined GSMD
 class LiveObjectsCellular : public LiveObjectsMKR
 {
   public:
@@ -51,3 +53,4 @@ extern const String SECRET_PINNUMBER;
 extern const String SECRET_APN;
 extern const String SECRET_APN_USER;
 extern const String SECRET_APN_PASS;
+#endif

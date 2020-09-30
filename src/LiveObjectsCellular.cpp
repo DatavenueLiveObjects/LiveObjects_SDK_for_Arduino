@@ -1,4 +1,6 @@
 #include "LiveObjectsCellular.h"
+
+#if defined NBD || defined GSMD
 LiveObjectsCellular::LiveObjectsCellular()
   :
    LiveObjectsMKR()
@@ -288,3 +290,4 @@ void LiveObjectsCellular::sendData()
   }
 }
 
+#endif

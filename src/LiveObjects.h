@@ -7,8 +7,10 @@
 
 
   #if defined ARDUINO_SAMD_MKRGSM1400 || defined ARDUINO_SAMD_MKRNB1500
+    #define Cellular
     #include "LiveObjectsCellular.h"
   #elif defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_NANO_33_IOT || defined ARDUINO_SAMD_MKRVIDOR4000 || defined ARDUINO_SAMD_MKR1000
+    #define WIFI_
     #include "LiveObjectsWiFi.h"
   #endif
 
