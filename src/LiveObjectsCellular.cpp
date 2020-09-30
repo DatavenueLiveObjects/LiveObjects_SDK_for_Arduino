@@ -65,7 +65,7 @@ void LiveObjectsCellular::begin(Protocol p, Encoding s, bool bDebug)
     }
     m_pMqttclient->onMessage(messageCallback);
   }
-  else 
+  else
   {
     if(SECRET_SERVER_MSISDN.length()<3)
     {
@@ -130,7 +130,11 @@ void LiveObjectsCellular::connectNetwork()
   }
   else
   {
+      #ifdef NBD
+      while (m_Acces.begin(SECRET_PINNUMBER.c_str(), SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != NB_READY)
+      #elif defined GSMD
       if(m_Protocol==MQTT) while ((m_GPRSAcces.attachGPRS(SECRET_APN.c_str(), SECRET_APN_USER.c_str(), SECRET_APN_PASS.c_str()) != GPRS_READY)) outputDebug(TXT, ".");
+      #endif
       delay(100);//outputDebug(INFO, "Sending atcmgf");
       if(m_Encoding==BINARY) MODEM.send("AT+CMGF=0");
       else MODEM.send("AT+CMGF=1");
@@ -234,7 +238,7 @@ void LiveObjectsCellular::addNetworkInfo()
 {
   String strength= m_Scanner.getSignalStrength();
   String carrier = m_Scanner.getCurrentCarrier();
-  if(m_Protocol == MQTT && m_Encoding==TEXT) 
+  if(m_Protocol == MQTT && m_Encoding==TEXT)
   {
     bool status;
     #ifdef NBD
