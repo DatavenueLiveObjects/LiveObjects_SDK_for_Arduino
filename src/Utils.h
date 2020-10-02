@@ -172,9 +172,12 @@ uint8_t hexBinary(char msb, char lsb);
  *                  PMIC CONSTANTS
  * 
  * ****************************************************************************/
+//#if not defined ESP8266 && not defined ESP32
+#ifdef PMIC_PRESENT
 #define PMIC_ADDRESS 0x6B
 #define SYSTEM_STATUS_REGISTER 0x08
 #define PMIC_VERSION_REGISTER 0x0A
 
 byte readRegister(byte address);
 void batteryBegin();
+#endif

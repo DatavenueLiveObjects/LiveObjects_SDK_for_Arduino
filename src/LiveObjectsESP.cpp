@@ -1,5 +1,6 @@
-#ifdef ESP8266
-#include "LiveObjectsESP8266.h"
+#include "LiveObjectsESP.h"
+
+#if defined ESP8266D || defined ESP32D
 LiveObjectsESP::LiveObjectsESP()
   :
    m_pClient(nullptr)
@@ -25,6 +26,11 @@ void LiveObjectsESP::begin(Protocol p, Encoding s, bool bDebug)
     m_pClient = new WiFiClientSecure();
     m_pMqttclient = new PubSubClient(*m_pClient);
     m_nPort = 8883;
+    #ifdef ESP32D
+    ((WiFiClientSecure*)m_pClient)->setCACert(SERVER_CERT);
+    #else
+    ((WiFiClientSecure*)m_pClient)->setCACert(LO_ROOT_CERT.data, LO_ROOT_CERT.size);
+    #endif
     break;
     case NONE:
     m_pClient = new WiFiClient();
@@ -42,7 +48,12 @@ void LiveObjectsESP::begin(Protocol p, Encoding s, bool bDebug)
 void LiveObjectsESP::connectNetwork() 
 {
   outputDebug(INFO, "Connectong to ", SECRET_SSID);
-  WiFi.begin(SECRET_SSID, SECRET_WIFI_PASS);
+  #ifdef ESP8266D
+    WiFi.begin(SECRET_SSID, SECRET_WIFI_PASS);
+  #else
+    WiFi.begin(SECRET_SSID.c_str(), SECRET_WIFI_PASS.c_str());
+  #endif
+
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     outputDebug(TXT,".");
@@ -118,14 +129,20 @@ void LiveObjectsESP::connectMQTT()
   while (!m_pMqttclient->connect(m_sMqttid.c_str(),MQTT_USER, SECRET_LIVEOBJECTS_API_KEY.c_str())) outputDebug(TXT,".");
   outputDebug(INFO,"You're connected to the MQTT broker");
 
-  if(parameters.size()>0) outputDebug(ERR,"Parameters not supported yet!");//m_pMqttclient->subscribe(MQTT_SUBCFG);
+  #ifdef ESP8266D
+  if(parameters.size()>0) outputDebug(ERR,"Parameters not supported!");
+  #else
+  if(parameters.size()>0) m_pMqttclient->subscribe(MQTT_SUBCFG);
+  #endif
   if(!m_bSubCMD && commands.size()>0) m_pMqttclient->subscribe(MQTT_SUBCMD);
 
   m_pMqttclient->loop();
 
   if (!m_bInitialMqttConfig) 
   {
+    #ifndef ESP8266D
     configurationManager("");
+    #endif
     m_bInitialMqttConfig = true;
   }
 }
@@ -194,7 +211,13 @@ void LiveObjectsESP::onMQTTmessage(char* topic, uint8_t* payload, unsigned int l
   m_sRecvBuffer="";
   for(int i=0;i<length;++i) m_sRecvBuffer+=(char)payload[i];
   if(stopic==MQTT_SUBCFG)
+  {
+    #ifdef ESP32D
+    outputDebug(ERR, "Parameters not supported on this board!");
+    return;
+    #endif
     configurationManager(topic,1);
+  }
   else if(stopic==MQTT_SUBCMD)
     commandManager(topic);
 }

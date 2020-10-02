@@ -1,11 +1,8 @@
 #pragma once
-
  /******************************************************************************
    Arduino MKR BOARDS
  ******************************************************************************/
 #ifdef ARDUINO_ARCH_SAMD
-
-
   #if defined ARDUINO_SAMD_MKRGSM1400 || defined ARDUINO_SAMD_MKRNB1500
     #define Cellular
     #include "LiveObjectsCellular.h"
@@ -18,22 +15,13 @@
   #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
     #define PMIC_PRESENT
   #endif
-
-
 #endif
-
-
-
-
-
-
-
 
  /******************************************************************************
    ESP8266 BOARDS
  ******************************************************************************/
-#ifdef ESP8266
-  #include "LiveObjectsESP8266.h"
+#if defined ESP8266 || defined ESP32
+  #include "LiveObjectsESP.h"
 #endif
 
 

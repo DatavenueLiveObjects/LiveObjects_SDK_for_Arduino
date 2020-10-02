@@ -31,7 +31,7 @@ void LiveObjectsBase::paramTyper(const String& name, char* variable, LiveObjects
   else
     addTypedParam(name, variable, type, T_CHAR, callback);
 }
-#ifndef ESP8266
+#if not defined ESP8266 && not defined ESP32
 void LiveObjectsBase::paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT, callback);
