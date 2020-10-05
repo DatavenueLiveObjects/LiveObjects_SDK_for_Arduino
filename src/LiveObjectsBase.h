@@ -122,10 +122,10 @@ public:
       LiveObjects_parameter(String name, void *variable, LiveObjects_parameterType t, LiveObjects_variableType vt, onParameterUpdateCallback c)
       :
         label(name)
-       ,value(variable)
        ,type(t)
        ,variableType(vt)
        ,callback(c)
+       ,value(variable)
       {}
 
       bool operator==(const LiveObjects_parameter& p){ return label == p.label; }
@@ -249,7 +249,6 @@ protected:
 ******************************************************************************/
 private:
     unsigned long lastKeepAliveNetwork;
-
 protected:
     String m_sMqttid;
     String m_sPayload;
@@ -259,10 +258,11 @@ protected:
     Protocol m_Protocol;
     Security m_Security;
     Encoding m_Encoding;
-    bool m_bInitialMqttConfig;
+    
     bool m_bDebug;
-    bool m_bCertLoaded;
     bool m_bInitialized;
+    bool m_bInitialMqttConfig;
+    bool m_bCertLoaded;
     bool m_bSubCMD;
 /******************************************************************************
    PARAM TYPERS

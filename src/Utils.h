@@ -23,7 +23,7 @@ template<typename T>
 class LinkedList
 {
   public:
-    LinkedList(): m_nSize(0), head(nullptr), tail(nullptr){}
+    LinkedList():  head(nullptr), tail(nullptr), m_nSize(0){}
     ~LinkedList();
   public:
     bool push(T* element);

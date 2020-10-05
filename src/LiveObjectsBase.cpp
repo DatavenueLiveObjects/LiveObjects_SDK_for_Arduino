@@ -3,15 +3,15 @@
 
 LiveObjectsBase::LiveObjectsBase()
     :
-     m_bDebug(false)
+     lastKeepAliveNetwork(10000)
+    ,m_sPayload()
+    ,m_sDecoder()
+    ,m_Security(NONE)
+    ,m_bDebug(false)
     ,m_bInitialized(false)
     ,m_bInitialMqttConfig(false)
     ,m_bCertLoaded(false)
-    ,m_sPayload()
     ,m_bSubCMD(false)
-    ,lastKeepAliveNetwork(10000)
-    ,m_Security(NONE)
-    ,m_sDecoder()
 {}
 
 
@@ -203,6 +203,8 @@ void LiveObjectsBase::configurationManager(String topic, int messageSize) {
           break;
         case DECIMAL:
           configOut[JSONCFG][parameters[i]->label.c_str()][JSONCFGTYPE] = F("f64");
+          break;
+        case IMPLICIT:
           break;
       }
       ptrTyper(*parameters[i], configIn, configOut);

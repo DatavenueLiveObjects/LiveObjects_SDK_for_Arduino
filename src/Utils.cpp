@@ -68,7 +68,7 @@ String to7bit(String inputString)
   String converted;
   String toSteal = "";
   int stealSize = 1;
-  int index = 0;
+  //int index = 0;
   for (int i = 0; i < size;++i)
   {
       if (i + 1 == size)
