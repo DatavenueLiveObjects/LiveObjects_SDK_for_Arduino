@@ -70,7 +70,7 @@ void LiveObjectsESP::connectNetwork()
   char buff[10];
   WiFi.macAddress(mac);
 
-  for(int i=5;i>=0;--i)
+  for(int i=0;i<6;++i)
   {
     memset(buff,'\0',10);
     itoa(mac[i],buff,16);
@@ -84,7 +84,7 @@ void LiveObjectsESP::connectNetwork()
       m_sMac += (char)toupper(buff[j]);
       m_sMqttid += (char)toupper(buff[j]);
     }
-  if(i!=0) m_sMac += ':';
+  if(i!=5) m_sMac += ':';
   }
 
   // while(true)
@@ -212,7 +212,7 @@ void LiveObjectsESP::onMQTTmessage(char* topic, uint8_t* payload, unsigned int l
   for(int i=0;i<length;++i) m_sRecvBuffer+=(char)payload[i];
   if(stopic==MQTT_SUBCFG)
   {
-    #ifdef ESP32D
+    #ifdef ESP8266D
     outputDebug(ERR, "Parameters not supported on this board!");
     return;
     #endif
