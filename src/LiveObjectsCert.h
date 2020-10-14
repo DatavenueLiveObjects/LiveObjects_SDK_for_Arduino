@@ -10,7 +10,7 @@ struct LORootCert {
   const int size;
 };
 
-static const LORootCert LO_ROOT_CERT = {
+static const LORootCert LO_ROOT_CERT PROGMEM = {
     "DigiCert_Global_Root_CA",
     (const uint8_t[]){
       0x30, 0x82, 0x03, 0xaf, 0x30, 0x82, 0x02, 0x97, 0xa0, 0x03, 0x02, 0x01,
