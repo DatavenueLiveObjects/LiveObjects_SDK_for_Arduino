@@ -36,7 +36,7 @@
  ******************************************************************************/
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <ctime>
+#include <time.h>
 #include "LiveObjectsCert.h"
 #include "Utils.h"
 
@@ -269,7 +269,7 @@ protected:
  ******************************************************************************/
     void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    #if not defined ESP8266 && not defined ESP32
+    #if not defined ESP8266 && not defined ESP32 && not defined ARDUINO_AVR_FEATHER32U4
     void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     #endif

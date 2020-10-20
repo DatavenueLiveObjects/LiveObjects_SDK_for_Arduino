@@ -31,7 +31,7 @@ void LiveObjectsBase::paramTyper(const String& name, char* variable, LiveObjects
   else
     addTypedParam(name, variable, type, T_CHAR, callback);
 }
-#if not defined ESP8266 && not defined ESP32
+#if not defined ESP8266 && not defined ESP32 && not defined ARDUINO_AVR_FEATHER32U4
 void LiveObjectsBase::paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT, callback);

@@ -3,7 +3,8 @@
 #if defined ESP8266D || defined ESP32D
 LiveObjectsESP::LiveObjectsESP()
   :
-   m_pClient(nullptr)
+   LiveObjectsBase()
+  ,m_pClient(nullptr)
   ,m_pMqttclient(nullptr)
 {}
 
