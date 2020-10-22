@@ -4,7 +4,11 @@
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
+#ifdef ARDUINO_ARCH_AVR
+#define PAYLOAD_DATA_SIZE 256
+#else
 #define PAYLOAD_DATA_SIZE 1024
+#endif
 #define KEEP_ALIVE_NETWORK 1000
 #define SW_REVISION "1.8.0"
 
