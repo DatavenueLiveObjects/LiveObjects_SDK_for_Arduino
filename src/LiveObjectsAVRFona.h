@@ -3,14 +3,10 @@
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
-#ifdef ARDUINO_ARCH_AVR
 #define PAYLOAD_DATA_SIZE 256
-#else
-#define PAYLOAD_DATA_SIZE 1024
-#endif
 #define KEEP_ALIVE_NETWORK 1000
 #define SW_REVISION "1.8.0"
-
+#define MAX_COMMANDS 10
 
 /******************************************************************************
    LiveObjects MQTT constants
@@ -39,8 +35,8 @@
 #include <Adafruit_SleepyDog.h>
 #include <SoftwareSerial.h>
 #include <Adafruit_FONA.h>
-#include <Adafruit_MQTT.h>
-#include <Adafruit_MQTT_FONA.h>
+#include "Adafruit_MQTT.h"
+#include "Adafruit_MQTT_FONA.h"
 #include <ArduinoJson.h>
 
 #ifdef ARDUINO_AVR_FEATHER32U4
@@ -72,9 +68,18 @@ enum Encoding
   ,TEXT
 };
 
-
+typedef void (*onCommandCallback)(const String, String&);
 class LiveObjectsFona
 {
+private:
+struct LiveObjects_command
+    {
+      LiveObjects_command(String l, onCommandCallback c): label(l), callback(c){}
+      bool operator==(const LiveObjects_command& p){ return label == p.label; }
+      String label;
+      onCommandCallback callback;
+    };
+
   public:
   static LiveObjectsFona& get()
   {
@@ -90,21 +95,35 @@ public:
   void begin(Protocol p, Encoding e, bool d);
   void loop();
   void connect();
-  void addToPayload(String x, int y);
+  template<typename T>
+  void addToPayload(char* x, T y);
   void sendData();
-  bool FONAconnect();
-
+  void addCommand(char* name, onCommandCallback cb);
 private:
+  bool FONAconnect();
   void connectMQTT();
-
+  void clearPayload();
+  void publishMessage(const char* topic, JsonDocument& payload);
 private:
   Adafruit_FONA m_Fona;
   SoftwareSerial m_FonaSerial;
-  Adafruit_MQTT_FONA* m_FonaMQTT;
+  Adafruit_MQTT_FONA m_FonaMQTT;
+  LiveObjects_command* m_Commands[MAX_COMMANDS];
   StaticJsonDocument<PAYLOAD_DATA_SIZE> m_Payload;
-  String m_sClientID;
+  Protocol m_Protocol;
+  Encoding m_Encoding;
+  char m_sClientID[16];
+  char m_BufferPayload[PAYLOAD_DATA_SIZE];
   uint16_t m_nPort;
+  int m_nSubs;
 };
-extern const String SECRET_LIVEOBJECTS_API_KEY;
+
+template<typename T>
+inline void LiveObjectsFona::addToPayload(char * x, T y) 
+{
+  m_Payload[JSONVALUE][x] = y;
+}
+
+extern const char* SECRET_LIVEOBJECTS_API_KEY;
 
 typedef LiveObjectsFona LiveObjects;
