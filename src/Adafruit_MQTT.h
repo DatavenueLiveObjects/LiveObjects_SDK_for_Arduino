@@ -43,6 +43,7 @@
 // If using something like Zero or Due, change the above to SerialUSB
 
 // Define actual debug output functions when necessary.
+#define MQTT_DEBUG
 #ifdef MQTT_DEBUG
 #define DEBUG_PRINT(...)                                                       \
   { DEBUG_PRINTER.print(__VA_ARGS__); }
@@ -145,7 +146,7 @@ class Adafruit_MQTT_Subscribe; // forward decl
 
 class Adafruit_MQTT {
 public:
-  Adafruit_MQTT(const char *server, uint16_t port, const char *cid,
+  Adafruit_MQTT(const char *server, uint16_t port, char *cid,
                 const char *user, const char *pass);
 
   Adafruit_MQTT(const char *server, uint16_t port, const char *user = "",
@@ -212,8 +213,8 @@ public:
   bool ping(uint8_t n = 1);
   void setClientID(char* id);
   void setPort(uint16_t port);
-  bool readMessage(char* msg);
-  bool subscribeTopic(char* topic);
+  //bool readMessage(char* msg);
+  //bool subscribeTopic(char* topic);
 protected:
   // Interface that subclasses need to implement:
 

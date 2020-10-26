@@ -98,7 +98,7 @@ static uint8_t *stringprint(uint8_t *p, const char *s, uint16_t maxlen = 0) {
 
 // Adafruit_MQTT Definition ////////////////////////////////////////////////////
 
-Adafruit_MQTT::Adafruit_MQTT(const char *server, uint16_t port, const char *cid,
+Adafruit_MQTT::Adafruit_MQTT(const char *server, uint16_t port, char *cid,
                              const char *user, const char *pass) {
   servername = server;
   portnum = port;
@@ -845,55 +845,55 @@ bool Adafruit_MQTT_Publish::publish(uint8_t *payload, uint16_t bLen) {
   return mqtt->publish(topic, payload, bLen, qos);
 }
 
-bool Adafruit_MQTT::readMessage(char* msg) 
-{
-  uint16_t i, topiclen, datalen;
+// bool Adafruit_MQTT::readMessage(char* msg) 
+// {
+//   uint16_t i, topiclen, datalen;
 
-  // Check if data is available to read.
-  uint16_t len =
-      readFullPacket(buffer, MAXBUFFERSIZE, 6000); // return one full packet
-  if (!len)
-    return false; // No data available, just quit.
+//   // Check if data is available to read.
+//   uint16_t len =
+//       readFullPacket(buffer, MAXBUFFERSIZE, 6000); // return one full packet
+//   if (!len)
+//     return false; // No data available, just quit.
  
-  if (len < 3)
-    return NULL;
-  if ((buffer[0] & 0xF0) != (MQTT_CTRL_PUBLISH) << 4)
-    return NULL;
+//   if (len < 3)
+//     return NULL;
+//   if ((buffer[0] & 0xF0) != (MQTT_CTRL_PUBLISH) << 4)
+//     return NULL;
 
-  // Parse out length of packet.
-  topiclen = buffer[3];
+//   // Parse out length of packet.
+//   topiclen = buffer[3];
 
-  uint8_t packet_id_len = 0;
-  uint16_t packetid = 0;
-  // Check if it is QoS 1, TODO: we dont support QoS 2
-  if ((buffer[0] & 0x6) == 0x2) {
-    packet_id_len = 2;
-    packetid = buffer[topiclen + 4];
-    packetid <<= 8;
-    packetid |= buffer[topiclen + 5];
-  }
+//   uint8_t packet_id_len = 0;
+//   uint16_t packetid = 0;
+//   // Check if it is QoS 1, TODO: we dont support QoS 2
+//   if ((buffer[0] & 0x6) == 0x2) {
+//     packet_id_len = 2;
+//     packetid = buffer[topiclen + 4];
+//     packetid <<= 8;
+//     packetid |= buffer[topiclen + 5];
+//   }
 
-  // zero out the old data
-  memset(msg, 0, SUBSCRIPTIONDATALEN);
+//   // zero out the old data
+//   memset(msg, 0, SUBSCRIPTIONDATALEN);
 
-  datalen = len - topiclen - packet_id_len - 4;
-  if (datalen > SUBSCRIPTIONDATALEN) {
-    datalen = SUBSCRIPTIONDATALEN - 1; // cut it off
-  }
-  // extract out just the data, into the subscription object itself
-  memmove(msg, buffer + 4 + topiclen + packet_id_len,
-          datalen);
+//   datalen = len - topiclen - packet_id_len - 4;
+//   if (datalen > SUBSCRIPTIONDATALEN) {
+//     datalen = SUBSCRIPTIONDATALEN - 1; // cut it off
+//   }
+//   // extract out just the data, into the subscription object itself
+//   memmove(msg, buffer + 4 + topiclen + packet_id_len,
+//           datalen);
 
- return true;
-}
+//  return true;
+// }
 
-bool Adafruit_MQTT::subscribeTopic(char* topic) 
-{
-  uint8_t len = subscribePacket(buffer, topic,
-                                    0);
-      if (!sendPacket(buffer, len))
-        return -1;
-}
+// bool Adafruit_MQTT::subscribeTopic(char* topic) 
+// {
+//   uint8_t len = subscribePacket(buffer, topic,
+//                                     0);
+//       if (!sendPacket(buffer, len))
+//         return -1;
+// }
 
 // Adafruit_MQTT_Subscribe Definition //////////////////////////////////////////
 

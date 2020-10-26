@@ -1,6 +1,5 @@
 
 #include "LiveObjectsBase.h"
-
 LiveObjectsBase::LiveObjectsBase()
     :
      lastKeepAliveNetwork(10000)
@@ -391,6 +390,7 @@ void LiveObjectsBase::setDecoder(String s)
 
 void LiveObjectsBase::addTimestamp(time_t timestamp)
 {
+  #ifndef ARDUINO_ARCH_AVR
   char bufer[sizeof("2011-10-08T07:07:09Z")];
   strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
   if(m_Protocol == MQTT && m_Encoding==TEXT) easyDataPayload["timestamp"]=bufer;
@@ -399,6 +399,7 @@ void LiveObjectsBase::addTimestamp(time_t timestamp)
     String s = bufer;
     addToStringPayload(s);
   }
+  #endif
 }
 void LiveObjectsBase::addLocation(double lat, double lon, double alt)
 {

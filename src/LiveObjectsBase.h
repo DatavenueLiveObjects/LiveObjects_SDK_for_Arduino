@@ -4,11 +4,7 @@
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
-#ifdef ARDUINO_ARCH_AVR
-#define PAYLOAD_DATA_SIZE 256
-#else
 #define PAYLOAD_DATA_SIZE 1024
-#endif
 #define KEEP_ALIVE_NETWORK 1000
 #define SW_REVISION "1.8.0"
 
@@ -40,7 +36,11 @@
  ******************************************************************************/
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <time.h>
+#ifndef ARDUINO_ARCH_AVR
+#include <ctime>
+#else
+typedef long long time_t;
+#endif
 #include "LiveObjectsCert.h"
 #include "Utils.h"
 

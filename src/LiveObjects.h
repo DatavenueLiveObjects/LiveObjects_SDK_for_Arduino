@@ -28,7 +28,8 @@
    Adafruit FONA
  ******************************************************************************/
 #ifdef ARDUINO_AVR_FEATHER32U4
-  #include "LiveObjectsAVRFona.h"
+  #define FONAHD
+  #include "LiveObjectsFona.h"
 #endif
 
 

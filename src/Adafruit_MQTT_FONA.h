@@ -35,7 +35,7 @@
 class Adafruit_MQTT_FONA : public Adafruit_MQTT {
 public:
   Adafruit_MQTT_FONA(Adafruit_FONA *f, const char *server, uint16_t port,
-                     const char *cid, const char *user, const char *pass)
+                     char *cid, const char *user, const char *pass)
       : Adafruit_MQTT(server, port, cid, user, pass), fona(f) {}
 
   Adafruit_MQTT_FONA(Adafruit_FONA *f, const char *server, uint16_t port,
