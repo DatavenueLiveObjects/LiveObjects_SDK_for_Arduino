@@ -118,13 +118,13 @@ struct LiveObjects_parameter
       onParameterUpdateCallback callback;
       void *value;
     };
-struct LiveObjects_command
-    {
-      LiveObjects_command(String l, onCommandCallback c): label(l), callback(c){}
-      bool operator==(const LiveObjects_command& p){ return label == p.label; }
-      String label;
-      onCommandCallback callback;
-    };
+// struct LiveObjects_command
+//     {
+//       LiveObjects_command(String l, onCommandCallback c): label(l), callback(c){}
+//       bool operator==(const LiveObjects_command& p){ return label == p.label; }
+//       String label;
+//       onCommandCallback callback;
+//     };
 
   public:
   static LiveObjectsFona& get()
@@ -176,7 +176,6 @@ private:
   Adafruit_FONA m_Fona;
   SoftwareSerial m_FonaSerial;
   Adafruit_MQTT_FONA m_FonaMQTT;
-  LiveObjects_command* m_Commands[MAX_COMMANDS];
   StaticJsonDocument<PAYLOAD_DATA_SIZE> m_Payload;
   Protocol m_Protocol;
   Encoding m_Encoding;
@@ -184,6 +183,7 @@ private:
   char m_sClientID[16];
   char m_BufferPayload[PAYLOAD_DATA_SIZE];
   uint16_t m_nPort;
+  unsigned long lastKeepAliveNetwork;
 };
 
 template<typename T>
@@ -203,7 +203,7 @@ void LiveObjectsFona::addToStringPayload(T val, Args ... args)
   addToStringPayload(args...);
 }
 
-extern const String SECRET_LIVEOBJECTS_API_KEY;
+extern const char* SECRET_LIVEOBJECTS_API_KEY;
 extern const String SECRET_SERVER_MSISDN;
 // extern const String SECRET_PINNUMBER;
 // extern const String SECRET_APN;

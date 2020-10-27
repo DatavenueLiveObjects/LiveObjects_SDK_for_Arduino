@@ -59,7 +59,6 @@
 #define DEBUG_PRINTBUFFER(buffer, len)                                         \
   {}
 #endif
-#define MQTT_DEBUG
 #ifdef MQTT_ERROR
 #define ERROR_PRINT(...)                                                       \
   { DEBUG_PRINTER.print(__VA_ARGS__); }

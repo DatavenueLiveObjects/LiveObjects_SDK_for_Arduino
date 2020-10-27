@@ -4,7 +4,7 @@ LiveObjectsFona::LiveObjectsFona()
   :
    m_Fona(FONA_RST)
    ,m_FonaSerial(FONA_TX,FONA_RX)
-   ,m_FonaMQTT(&m_Fona,MQTT_BROKER, 1883,"Fona", MQTT_USER, SECRET_LIVEOBJECTS_API_KEY.c_str())
+   ,m_FonaMQTT(&m_Fona,MQTT_BROKER, 1883,"Fona", MQTT_USER, SECRET_LIVEOBJECTS_API_KEY)
    ,m_sClientID()
    ,m_nPort(1883)
    ,m_Security(NONE)
@@ -25,14 +25,13 @@ void LiveObjectsFona::begin(Protocol p, Encoding e, bool d)
 
 void LiveObjectsFona::loop() 
 {
-  // char buffer[100];
-  // if(m_FonaMQTT.readMessage(buffer))
-  // {
-  //   StaticJsonDocument<100> doc;
-  //   deserializeJson(doc,buffer);
-  //   //Serial.println(doc["req"].as<char*>());
-  //   //Serial.println(doc["res"].as<char*>());
-  // }
+  
+  unsigned long now = millis();
+  if (now - lastKeepAliveNetwork > KEEP_ALIVE_NETWORK) {
+    m_Fona.getNetworkStatus();
+    if(m_Protocol == MQTT) m_FonaMQTT.ping();
+    lastKeepAliveNetwork = now;
+  }
 }
 
 void LiveObjectsFona::connect() 
@@ -40,7 +39,7 @@ void LiveObjectsFona::connect()
   while (! FONAconnect()) {
     //Serial.print(".");
   }
-  //Serial.println("[INFO] Connected to Cellular!");
+  Serial.println("[INFO] Connected to Cellular!");
   delay(5000);  // wait a few seconds to stabilize connection
   if(m_Protocol==MQTT)
   {
@@ -76,8 +75,8 @@ void LiveObjectsFona::sendData()
     }
     if(m_Encoding==TEXT)
     {
-      //Serial.print("[INFO] Publishing message: ");
-      //Serial.println(m_BufferPayload);
+      Serial.print("[INFO] Publishing message: ");
+      Serial.println(m_BufferPayload);
       m_Fona.sendSMS(SECRET_SERVER_MSISDN.c_str(),m_BufferPayload);
     }
   }
@@ -185,16 +184,16 @@ void LiveObjectsFona::connectMQTT()
     return;
   }
   delay(2000);
-  //Serial.print("[INFO] Connecting to MQTT ");
+  Serial.println("[INFO] Connecting to MQTT ");
 
   while ((ret = m_FonaMQTT.connect()) != 0) { // connect will return 0 for connected
-    ////Serial.println(m_FonaMQTT.connectErrorString(ret));
+    Serial.println(m_FonaMQTT.connectErrorString(ret));
     //Serial.print(".");
-    m_FonaMQTT.disconnect();
+    //m_FonaMQTT.disconnect();
     delay(5000);  // wait 5 seconds
   }
   //Serial.println();
-  //Serial.println("[INFO] MQTT Connected!");
+  Serial.println("[INFO] MQTT Connected!");
 }
 
 void LiveObjectsFona::clearPayload() 
@@ -212,8 +211,8 @@ void LiveObjectsFona::publishMessage(const char* topic, JsonDocument& payload)
     return;
   }
   serializeJson(payload,m_BufferPayload);
-  //Serial.println("Publishing message:");
-  //Serial.println(m_BufferPayload);
+  Serial.println("Publishing message:");
+  Serial.println(m_BufferPayload);
   m_FonaMQTT.publish(topic, m_BufferPayload);
 }
 
