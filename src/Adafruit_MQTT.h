@@ -43,7 +43,7 @@
 // If using something like Zero or Due, change the above to SerialUSB
 
 // Define actual debug output functions when necessary.
-#define MQTT_DEBUG
+//#define MQTT_DEBUG
 #ifdef MQTT_DEBUG
 #define DEBUG_PRINT(...)                                                       \
   { DEBUG_PRINTER.print(__VA_ARGS__); }
@@ -59,7 +59,7 @@
 #define DEBUG_PRINTBUFFER(buffer, len)                                         \
   {}
 #endif
-
+#define MQTT_DEBUG
 #ifdef MQTT_ERROR
 #define ERROR_PRINT(...)                                                       \
   { DEBUG_PRINTER.print(__VA_ARGS__); }

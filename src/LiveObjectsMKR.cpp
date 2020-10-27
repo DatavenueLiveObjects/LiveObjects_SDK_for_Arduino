@@ -34,6 +34,7 @@ void LiveObjectsMKR::sendMQTT(String& topic, String& doc)
 
 void LiveObjectsMKR::checkMQTT()
 {
+  m_pMqttclient->poll();
   if(!m_bSubCMD) if(commands.size()>0) m_pMqttclient->subscribe(MQTT_SUBCMD);
   if(!m_pMqttclient->connected())
     connectMQTT();

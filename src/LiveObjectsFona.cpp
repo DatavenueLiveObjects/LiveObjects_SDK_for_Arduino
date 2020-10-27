@@ -4,7 +4,7 @@ LiveObjectsFona::LiveObjectsFona()
   :
    m_Fona(FONA_RST)
    ,m_FonaSerial(FONA_TX,FONA_RX)
-   ,m_FonaMQTT(&m_Fona,MQTT_BROKER, 1883,"Fona", MQTT_USER, SECRET_LIVEOBJECTS_API_KEY)
+   ,m_FonaMQTT(&m_Fona,MQTT_BROKER, 1883,"Fona", MQTT_USER, SECRET_LIVEOBJECTS_API_KEY.c_str())
    ,m_sClientID()
    ,m_nPort(1883)
    ,m_Security(NONE)
@@ -78,7 +78,7 @@ void LiveObjectsFona::sendData()
     {
       //Serial.print("[INFO] Publishing message: ");
       //Serial.println(m_BufferPayload);
-      m_Fona.sendSMS(SECRET_SERVER_MSISDN,m_BufferPayload);
+      m_Fona.sendSMS(SECRET_SERVER_MSISDN.c_str(),m_BufferPayload);
     }
   }
   clearPayload();

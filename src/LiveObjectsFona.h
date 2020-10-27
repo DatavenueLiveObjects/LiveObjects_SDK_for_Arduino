@@ -5,7 +5,7 @@
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
  ******************************************************************************/
-#define PAYLOAD_DATA_SIZE 256
+#define PAYLOAD_DATA_SIZE 200
 #define KEEP_ALIVE_NETWORK 1000
 #define SW_REVISION "1.8.0"
 #define MAX_COMMANDS 10
@@ -159,13 +159,13 @@ public:
   void addNetworkInfo();
 
   template<typename LOtA>
-  void addParameter(const String name, LOtA &variable){Serial.print("[ERROR] This board doesn't support this function");};
+  void addParameter(const String name, LOtA &variable){}//Serial.print("[ERROR] This board doesn't support this function");};
   template<typename LOtB>
-  void addParameter(const String name, LOtB &variable, LiveObjects_parameterType type){Serial.print("[ERROR] This board doesn't support this function");};
+  void addParameter(const String name, LOtB &variable, LiveObjects_parameterType type){}//Serial.print("[ERROR] This board doesn't support this function");};
   template<typename LOtC>
-  void addParameter(const String name, LOtC &variable, onParameterUpdateCallback callback){Serial.print("[ERROR] This board doesn't support this function");};
+  void addParameter(const String name, LOtC &variable, onParameterUpdateCallback callback){}//Serial.print("[ERROR] This board doesn't support this function");};
   template<typename LOtD>
-  void addParameter(const String name, LOtD &variable, onParameterUpdateCallback callback, LiveObjects_parameterType type){Serial.print("[ERROR] This board doesn't support this function");};
+  void addParameter(const String name, LOtD &variable, onParameterUpdateCallback callback, LiveObjects_parameterType type){}//Serial.print("[ERROR] This board doesn't support this function");};
 
 private:
   bool FONAconnect();
@@ -203,8 +203,8 @@ void LiveObjectsFona::addToStringPayload(T val, Args ... args)
   addToStringPayload(args...);
 }
 
-extern const char* SECRET_LIVEOBJECTS_API_KEY;
-extern const char* SECRET_SERVER_MSISDN;
+extern const String SECRET_LIVEOBJECTS_API_KEY;
+extern const String SECRET_SERVER_MSISDN;
 // extern const String SECRET_PINNUMBER;
 // extern const String SECRET_APN;
 // extern const String SECRET_APN_USER;

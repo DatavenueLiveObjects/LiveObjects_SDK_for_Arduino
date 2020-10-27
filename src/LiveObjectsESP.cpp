@@ -108,9 +108,9 @@ void LiveObjectsESP::disconnectNetwork()
 
 void LiveObjectsESP::checkMQTT() 
 {
+  m_pMqttclient->loop();
   if(!m_pMqttclient->connected())
     connectMQTT();
-  m_pMqttclient->loop();
 }
 
 void LiveObjectsESP::connectMQTT() 

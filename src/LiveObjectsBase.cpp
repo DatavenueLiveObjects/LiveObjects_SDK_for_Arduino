@@ -2,7 +2,7 @@
 #include "LiveObjectsBase.h"
 LiveObjectsBase::LiveObjectsBase()
     :
-     lastKeepAliveNetwork(10000)
+     lastKeepAliveNetwork(5000)
     ,m_sPayload()
     ,m_sDecoder()
     ,m_Security(NONE)
