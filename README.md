@@ -16,7 +16,10 @@ The code will manage the LTE-M, GSM and WiFi connection(depending on currently u
 | Arduino MKR 1500 NB | OK | OK | OK |
 | Arduino MKR VIDOR 4000 | OK | OK* | - |
 | Arduino Nano 33 IoT | OK | OK | - |
-| ESP8266 Boards(Beta) | OK | - | - |
+| ESP8266 Boards | OK | - | - |
+| ESP32 Boards | OK | OK | - |
+| Adafruit Feather M0 WiFi| OK | OK | - |
+| Adafruit Feather 32u4 | OK | - | OK |
 
 ## Prerequisites/dependecies ##
 This code needs 2 ~~3~~ external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
@@ -31,11 +34,11 @@ This code needs 2 ~~3~~ external libraries to run, that you can install using th
 
  \* currently integrated into this SDK, until https://github.com/arduino-libraries/ArduinoMqttClient/pull/44 fix will be merged
 
-#### Library For ESP8266 boards
+#### Library for ESP8266 and ESP32 boards
 - [PubSubClient](https://pubsubclient.knolleary.net/) library provides a client for doing simple publish/subscribe messaging with a server that supports MQTT
 
 #### Library developed by Benoît Blanchon*
-*mandatory for both Arduino and ESP boards
+*mandatory for both Arduino, ESP and Adafruit boards
 - [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily
 
 #### SAMD21 Arduino core
@@ -48,7 +51,13 @@ This code needs 2 ~~3~~ external libraries to run, that you can install using th
 3. Clone or download the directory from Github.
 4. In the **'src/arduino_secrets.h'** file :
    - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
+   
+   In case of feather 32u4 you have to change type of this variable to char* from String 
    - Fill in the connection(WIFI or GSM) credentials if needed (pin code, APN information, etc). In case of GSM connection, most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
+
+   In case of feather32u4 you have to change APN in library file LiveObjectsFona.cpp 
+   
+   Line ~165 - m_Fona.setGPRSNetworkSettings(F("APN"), F(""), F(""));
 5. Import library into the Arduino IDE, to do this select: *Sketch-> Include Library-> Add .ZIP Library* and select folder which you cloned in the previous step(actually it doesn't need to be .ZIP-ed to be imported). After successful import you should see example sketches in *File->Examples->LiveObjectsSDK*
 
 

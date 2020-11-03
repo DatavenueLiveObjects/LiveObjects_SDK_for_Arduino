@@ -23,7 +23,7 @@ template<typename T>
 class LinkedList
 {
   public:
-    LinkedList(): m_nSize(0), head(nullptr), tail(nullptr){}
+    LinkedList():  head(nullptr), tail(nullptr), m_nSize(0){}
     ~LinkedList();
   public:
     bool push(T* element);
@@ -172,9 +172,12 @@ uint8_t hexBinary(char msb, char lsb);
  *                  PMIC CONSTANTS
  * 
  * ****************************************************************************/
+//#if not defined ESP8266 && not defined ESP32
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 #define PMIC_ADDRESS 0x6B
 #define SYSTEM_STATUS_REGISTER 0x08
 #define PMIC_VERSION_REGISTER 0x0A
 
 byte readRegister(byte address);
 void batteryBegin();
+#endif

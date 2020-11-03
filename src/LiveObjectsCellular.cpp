@@ -276,7 +276,6 @@ void LiveObjectsCellular::sendData()
       if(m_Sms.beginSMS(SECRET_SERVER_MSISDN.c_str())!=1) outputDebug(ERR,"Error occured while sending SMS");
       m_Sms.print(m_sPayload);
       if(m_Sms.endSMS()!=1) outputDebug(ERR,"Error occured while sending SMS");
-      outputDebug(INFO, "Nie tutaj");
     }
     else
     {

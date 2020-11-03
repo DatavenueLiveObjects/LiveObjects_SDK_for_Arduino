@@ -1,8 +1,18 @@
 #pragma once
-#ifdef ESP8266
+#if defined ESP8266 || defined ESP32
 #include "LiveObjectsBase.h"
-#include <ESP8266WiFi.h>
+  #ifdef ESP8266 
+    #include <ESP8266WiFi.h>
+    #define ESP8266D
+  #else
+    #include <WiFi.h>
+    #include <WiFiClientSecure.h>
+    #define ESP32D
+  #endif
 #include <PubSubClient.h>
+#endif
+
+#if defined ESP32D || defined ESP8266D
 class LiveObjectsESP : public LiveObjectsBase
 {
   LiveObjectsESP();
@@ -38,7 +48,7 @@ class LiveObjectsESP : public LiveObjectsBase
     void addNetworkInfo() override;
 
   private:
-    WiFiClient* m_pClient;
+    Client* m_pClient;
     PubSubClient* m_pMqttclient;
     String m_sMac;
     String m_sIP;

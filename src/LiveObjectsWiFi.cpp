@@ -46,6 +46,9 @@ void LiveObjectsWiFi::begin(Protocol p, Encoding s, bool bDebug)
 
 void LiveObjectsWiFi::connectNetwork()
 {
+  #ifdef ADAFRUIT_FEATHER_M0
+    WiFi.setPins(8,7,4,2);
+  #endif
   if(!m_bInitialized)
   {
     outputDebug(WARN,"missing begin() call, calling with default protcol=MQTT, security protcol=TLS, debug=true");

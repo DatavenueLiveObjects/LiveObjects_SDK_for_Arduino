@@ -1,17 +1,16 @@
 
 #include "LiveObjectsBase.h"
-
 LiveObjectsBase::LiveObjectsBase()
     :
-     m_bDebug(false)
+     lastKeepAliveNetwork(5000)
+    ,m_sPayload()
+    ,m_sDecoder()
+    ,m_Security(NONE)
+    ,m_bDebug(false)
     ,m_bInitialized(false)
     ,m_bInitialMqttConfig(false)
     ,m_bCertLoaded(false)
-    ,m_sPayload()
     ,m_bSubCMD(false)
-    ,lastKeepAliveNetwork(10000)
-    ,m_Security(NONE)
-    ,m_sDecoder()
 {}
 
 
@@ -31,7 +30,7 @@ void LiveObjectsBase::paramTyper(const String& name, char* variable, LiveObjects
   else
     addTypedParam(name, variable, type, T_CHAR, callback);
 }
-#ifndef ESP8266
+#if not defined ESP8266 && not defined ESP32 && not defined ARDUINO_AVR_FEATHER32U4
 void LiveObjectsBase::paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_INT, callback);
@@ -204,6 +203,8 @@ void LiveObjectsBase::configurationManager(String topic, int messageSize) {
         case DECIMAL:
           configOut[JSONCFG][parameters[i]->label.c_str()][JSONCFGTYPE] = F("f64");
           break;
+        case IMPLICIT:
+          break;
       }
       ptrTyper(*parameters[i], configIn, configOut);
     }
@@ -242,7 +243,7 @@ void LiveObjectsBase::commandManager(String topic) {
 
 void LiveObjectsBase::connect()
 {
-  #ifdef PMIC_PRESENT
+  #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
   batteryBegin();
   #endif
   connectNetwork();
@@ -389,6 +390,7 @@ void LiveObjectsBase::setDecoder(String s)
 
 void LiveObjectsBase::addTimestamp(time_t timestamp)
 {
+  #ifndef ARDUINO_ARCH_AVR
   char bufer[sizeof("2011-10-08T07:07:09Z")];
   strftime(bufer, sizeof(bufer), "%Y-%m-%dT%H:%M:%SZ",gmtime(&timestamp));
   if(m_Protocol == MQTT && m_Encoding==TEXT) easyDataPayload["timestamp"]=bufer;
@@ -397,6 +399,7 @@ void LiveObjectsBase::addTimestamp(time_t timestamp)
     String s = bufer;
     addToStringPayload(s);
   }
+  #endif
 }
 void LiveObjectsBase::addLocation(double lat, double lon, double alt)
 {
