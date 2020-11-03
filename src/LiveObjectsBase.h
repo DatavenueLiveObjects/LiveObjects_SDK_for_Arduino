@@ -36,7 +36,11 @@
  ******************************************************************************/
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#ifndef ARDUINO_ARCH_AVR
 #include <ctime>
+#else
+typedef long long time_t;
+#endif
 #include "LiveObjectsCert.h"
 #include "Utils.h"
 
@@ -122,10 +126,10 @@ public:
       LiveObjects_parameter(String name, void *variable, LiveObjects_parameterType t, LiveObjects_variableType vt, onParameterUpdateCallback c)
       :
         label(name)
-       ,value(variable)
        ,type(t)
        ,variableType(vt)
        ,callback(c)
+       ,value(variable)
       {}
 
       bool operator==(const LiveObjects_parameter& p){ return label == p.label; }
@@ -249,7 +253,6 @@ protected:
 ******************************************************************************/
 private:
     unsigned long lastKeepAliveNetwork;
-
 protected:
     String m_sMqttid;
     String m_sPayload;
@@ -259,17 +262,18 @@ protected:
     Protocol m_Protocol;
     Security m_Security;
     Encoding m_Encoding;
-    bool m_bInitialMqttConfig;
+    
     bool m_bDebug;
-    bool m_bCertLoaded;
     bool m_bInitialized;
+    bool m_bInitialMqttConfig;
+    bool m_bCertLoaded;
     bool m_bSubCMD;
 /******************************************************************************
    PARAM TYPERS
  ******************************************************************************/
     void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    #ifndef ESP8266
+    #if not defined ESP8266 && not defined ESP32 && not defined ARDUINO_AVR_FEATHER32U4
     void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     #endif
@@ -388,7 +392,7 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
       Serial.print(item);
       break;
     default:
-      Serial.print(item);
+      if(m_bDebug) Serial.print(item);
   }
   if(String(item)!=".") outputDebug(TXT,args...);
 }

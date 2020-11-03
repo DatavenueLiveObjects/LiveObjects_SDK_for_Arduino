@@ -5,7 +5,7 @@
   #include "LiveObjectsMKR.h"
   #define WIFID
   #include <WiFiNINA.h>
-#elif defined ARDUINO_SAMD_MKR1000
+#elif defined ARDUINO_SAMD_MKR1000 || ADAFRUIT_FEATHER_M0
   #include "LiveObjectsMKR.h"
   #define WIFID
   #include <WiFi101.h>

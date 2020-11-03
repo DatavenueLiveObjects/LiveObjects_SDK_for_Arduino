@@ -1,6 +1,7 @@
 #include "Utils.h"
 #include <Arduino.h>
-
+//#if not defined ESP8266 && not defined ESP32
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 byte readRegister(byte address) {
     Wire.beginTransmission(PMIC_ADDRESS);
     Wire.write(address);
@@ -9,11 +10,9 @@ byte readRegister(byte address) {
       return -1;
     }
 
-    #ifndef ESP8266
     if (Wire.requestFrom(PMIC_ADDRESS, 1, true) != 1) {
       return -1;
     }
-    #endif
 
     return Wire.read();
 }
@@ -28,6 +27,8 @@ void batteryBegin()
       while(true);
   }
 }
+
+#endif
 
 String ToHex(String x)
 {
@@ -67,7 +68,7 @@ String to7bit(String inputString)
   String converted;
   String toSteal = "";
   int stealSize = 1;
-  int index = 0;
+  //int index = 0;
   for (int i = 0; i < size;++i)
   {
       if (i + 1 == size)
@@ -148,19 +149,3 @@ String from7bit(String inputString)
     Serial.println(converted);
   return converted;
 }
-
-//30180C7633168533D90C3693CD6032E20C36C3C98833D82C56A3CD6233D92C3883CD60B3E00C3683D582B0180C0683C16030180C0683C16030180C068301
-
-
-/*
-
-0110000 0110000 0110000 0110000 0111000 0110101 0111001
-
-
-00110000  00110000  00110000  00110000 00111000 00110101 00111001
-
-
-00110000 00011000 00001100 10000110 10101011 1100101 0100000
-
-
-*/
