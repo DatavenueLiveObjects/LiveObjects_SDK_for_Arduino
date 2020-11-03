@@ -55,7 +55,7 @@ This code needs 2 ~~3~~ external libraries to run, that you can install using th
    In case of feather 32u4 you have to change type of this variable to char* from String 
    - Fill in the connection(WIFI or GSM) credentials if needed (pin code, APN information, etc). In case of GSM connection, most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
 
-   In case of feather32u4 you have to change APN in library file LiveObjectsFona.cpp 
+   In case of feather 32u4 you have to change APN in library file LiveObjectsFona.cpp 
    
    Line ~165 - m_Fona.setGPRSNetworkSettings(F("APN"), F(""), F(""));
 5. Import library into the Arduino IDE, to do this select: *Sketch-> Include Library-> Add .ZIP Library* and select folder which you cloned in the previous step(actually it doesn't need to be .ZIP-ed to be imported). After successful import you should see example sketches in *File->Examples->LiveObjectsSDK*
