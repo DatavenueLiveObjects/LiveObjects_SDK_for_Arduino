@@ -158,7 +158,13 @@ bool LiveObjectsFona::FONAconnect()
 
   if(m_Protocol != SMS) 
   {
-    m_Fona.setGPRSNetworkSettings(F("internet"), F(""), F(""));
+    
+    /////////////////////////////////////////////////////////
+    //////             Change APN here             //////////
+    /////////////////////////////////////////////////////////
+    m_Fona.setGPRSNetworkSettings(F("APN"), F(""), F(""));
+    /////////////////////////////////////////////////////////
+
 
     delay(5000); // wait a few seconds to stabilize connection
 
