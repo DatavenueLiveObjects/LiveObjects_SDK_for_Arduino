@@ -16,7 +16,9 @@ The code will manage the LTE-M, GSM and WiFi connection(depending on currently u
 | Arduino MKR 1500 NB | OK | OK | OK |
 | Arduino MKR VIDOR 4000 | OK | OK* | - |
 | Arduino Nano 33 IoT | OK | OK | - |
-| ESP8266 Boards(Beta) | OK | - | - |
+| ESP8266 Boards | OK | - | - |
+| ESP32 Boards | OK | OK | - |
+| Feather 32u4 | OK | - | OK |
 
 ## Prerequisites/dependecies ##
 This code needs 2 ~~3~~ external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
@@ -48,6 +50,8 @@ This code needs 2 ~~3~~ external libraries to run, that you can install using th
 3. Clone or download the directory from Github.
 4. In the **'src/arduino_secrets.h'** file :
    - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
+   
+   In case of feather 32u4 you have to change type of this variable to char* from String 
    - Fill in the connection(WIFI or GSM) credentials if needed (pin code, APN information, etc). In case of GSM connection, most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.
 5. Import library into the Arduino IDE, to do this select: *Sketch-> Include Library-> Add .ZIP Library* and select folder which you cloned in the previous step(actually it doesn't need to be .ZIP-ed to be imported). After successful import you should see example sketches in *File->Examples->LiveObjectsSDK*
 

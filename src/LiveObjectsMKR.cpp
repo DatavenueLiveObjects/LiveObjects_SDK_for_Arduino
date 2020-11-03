@@ -98,8 +98,10 @@ void LiveObjectsMKR::stopMQTT()
 
 void LiveObjectsMKR::addPowerStatus()
 {
-  #ifdef PMIC_PRESENT
+  #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
+  outputDebug(INFO, "READ BEFORE");
   byte DATA = readRegister(SYSTEM_STATUS_REGISTER);
+  outputDebug(INFO, "READ AFTER");
   bool charging = (DATA & ((1<<5)|(1<<4)))!=0;
   bool bat = (DATA & (1<<0)) == 0 || charging;
   bool power=(DATA & (1<<2));

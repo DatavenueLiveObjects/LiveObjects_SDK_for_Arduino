@@ -1,8 +1,15 @@
 #pragma once
+
  /******************************************************************************
    Arduino MKR BOARDS
  ******************************************************************************/
 #ifdef ARDUINO_ARCH_SAMD
+
+  /* Power status for supported MKR boards*/
+  #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
+    #define PMIC_PRESENT
+  #endif
+
   #if defined ARDUINO_SAMD_MKRGSM1400 || defined ARDUINO_SAMD_MKRNB1500
     #define Cellular
     #include "LiveObjectsCellular.h"
@@ -10,13 +17,7 @@
     #define WIFI_
     #include "LiveObjectsWiFi.h"
   #endif
-
-  /* Power status for supported MKR boards*/
-  #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
-    #define PMIC_PRESENT
-  #endif
 #endif
-
  /******************************************************************************
    ESP8266 and ESP32 BOARDS 
  ******************************************************************************/

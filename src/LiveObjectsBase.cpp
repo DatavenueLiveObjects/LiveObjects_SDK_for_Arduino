@@ -243,7 +243,7 @@ void LiveObjectsBase::commandManager(String topic) {
 
 void LiveObjectsBase::connect()
 {
-  #ifdef PMIC_PRESENT
+  #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
   batteryBegin();
   #endif
   connectNetwork();

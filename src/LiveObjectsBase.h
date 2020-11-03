@@ -392,7 +392,7 @@ inline void LiveObjectsBase::outputDebug(LOG_MSGTYPE type,T item, Args&... args)
       Serial.print(item);
       break;
     default:
-      Serial.print(item);
+      if(m_bDebug) Serial.print(item);
   }
   if(String(item)!=".") outputDebug(TXT,args...);
 }

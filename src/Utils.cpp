@@ -1,7 +1,7 @@
 #include "Utils.h"
 #include <Arduino.h>
 //#if not defined ESP8266 && not defined ESP32
-#ifdef PMIC_PRESENT
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_MKRNB1500 || defined ARDUINO_SAMD_MKRGSM1400
 byte readRegister(byte address) {
     Wire.beginTransmission(PMIC_ADDRESS);
     Wire.write(address);
