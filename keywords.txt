@@ -9,26 +9,36 @@ lo	KEYWORD1
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
-setProtocol	KEYWORD2
 setSecurity	KEYWORD2
 enableDebug	KEYWORD2
 setClientID	KEYWORD2
-debugEnabled	KEYWORD2
+setDecoder	KEYWORD2
+debugEnabled KEYWORD2
 addTimestamp	KEYWORD2
 addLocation	KEYWORD2
 addNetworkInfo	KEYWORD2
+addPowerStatus	KEYWORD2
 clearPayload	KEYWORD2
-addCommand	KEYWORD2
 publishMessage	KEYWORD2
-connect		KEYWORD2
 networkCheck	KEYWORD2
+addCommand	KEYWORD2
+addParameter    KEYWORD2
+addToPayload    KEYWORD2
+addObjectToPayload  KEYWORD2
+connect		KEYWORD2
 disconnect	KEYWORD2
-onMQTTmessage	KEYWORD2
 sendData	KEYWORD2
 loop		KEYWORD2
 begin		KEYWORD2
+changeConfiguration		KEYWORD2
 
 
 ######################################
 # Constants (LITERAL1)
 ######################################
+NONE LITERAL1
+TLS LITERAL1
+SMS LITERAL1
+MQTT LITERAL1
+BINARY LITERAL1
+TEXT LITERAL1
