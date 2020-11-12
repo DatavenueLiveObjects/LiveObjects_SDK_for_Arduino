@@ -157,6 +157,8 @@ void LiveObjectsCellular::connectNetwork()
       }
     }
   }
+
+  m_sModel = m_sMqttid;
 }
 
 

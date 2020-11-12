@@ -31,7 +31,6 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
-#define JSONMODELNAME "Orange_Pollution_Shield"
 
 #include <SoftwareSerial.h>
 #include <Adafruit_FONA.h>
@@ -153,6 +152,7 @@ public:
   void setSecurity(Security s);
   void enableDebug(bool b);
   void setDecoder(char* s);
+  void setModel(char* s);
   void addTimestamp(time_t timestamp);
   void addLocation(double lat, double lon, double alt);
   void addPowerStatus();
@@ -181,6 +181,7 @@ private:
   Encoding m_Encoding;
   Security m_Security;
   char m_sClientID[16];
+  char m_sModel[16];
   char m_BufferPayload[PAYLOAD_DATA_SIZE];
   uint16_t m_nPort;
   unsigned long lastKeepAliveNetwork;

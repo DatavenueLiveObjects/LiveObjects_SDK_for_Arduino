@@ -41,9 +41,10 @@ void LiveObjectsFona::connect()
   }
   Serial.println("[INFO] Connected to Cellular!");
   delay(5000);  // wait a few seconds to stabilize connection
+  m_Fona.getIMEI(m_sClientID);
+  setModel(m_sClientID);
   if(m_Protocol==MQTT)
   {
-    m_Fona.getIMEI(m_sClientID);
     connectMQTT();
   }
 }
@@ -54,7 +55,7 @@ void LiveObjectsFona::sendData()
   {
     if(m_Encoding==TEXT)
     {
-      m_Payload[JSONMODEL] = JSONMODELNAME;
+      m_Payload[JSONMODEL] = m_sModel;
       publishMessage(MQTT_PUBDATA, m_Payload);
     }
     //else publishMessage(m_sTopic+m_sDecoder, m_sPayload);
@@ -111,6 +112,11 @@ void LiveObjectsFona::enableDebug(bool b)
 void LiveObjectsFona::setDecoder(char* s) 
 {
   //Serial.print("[ERROR] This board doesn't support this function");
+}
+
+void LiveObjectsFona::setModel(char* s) 
+{
+  strcpy(m_sModel,s);
 }
 
 void LiveObjectsFona::addTimestamp(time_t timestamp) 

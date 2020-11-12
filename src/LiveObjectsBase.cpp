@@ -5,6 +5,7 @@ LiveObjectsBase::LiveObjectsBase()
      lastKeepAliveNetwork(5000)
     ,m_sPayload()
     ,m_sDecoder()
+    ,m_sModel("Orange")
     ,m_Security(NONE)
     ,m_bDebug(false)
     ,m_bInitialized(false)
@@ -277,7 +278,7 @@ void LiveObjectsBase::sendData() {
   {
     if(m_Encoding==TEXT)
     {
-      easyDataPayload[JSONMODEL] = JSONMODELNAME;
+      easyDataPayload[JSONMODEL] = m_sModel;
       publishMessage(m_sTopic, easyDataPayload);
       easyDataPayload.clear();
     }
@@ -294,7 +295,7 @@ void LiveObjectsBase::sendData(const String customPayload) {
   {
     StaticJsonDocument<PAYLOAD_DATA_SIZE> payload;
     deserializeJson(payload, customPayload);
-    if (!payload.containsKey(JSONMODEL)) payload[JSONMODEL] = JSONMODELNAME;
+    if (!payload.containsKey(JSONMODEL)) payload[JSONMODEL] = m_sModel;
     publishMessage(m_sTopic, payload);
   }
   else publishMessage(m_sTopic, const_cast<String&>(customPayload));
@@ -386,6 +387,11 @@ void LiveObjectsBase::setDecoder(String s)
 {
   m_sDecoder = "/";
   m_sDecoder += s;
+}
+
+void LiveObjectsBase::setModel(String s) 
+{
+  m_sModel = s;
 }
 
 void LiveObjectsBase::addTimestamp(time_t timestamp)

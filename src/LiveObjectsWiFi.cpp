@@ -103,6 +103,7 @@ void LiveObjectsWiFi::connectNetwork()
     }
   if(i!=0) m_sMac += ':';
   }
+  m_sModel = m_sMqttid;
 }
 void LiveObjectsWiFi::checkNetwork()
 {

@@ -30,7 +30,6 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
-#define JSONMODELNAME "Orange_Pollution_Shield"
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
@@ -157,6 +156,7 @@ public:
   void enableDebug(bool b);
   void setClientID(const String id);
   void setDecoder(String s);
+  void setModel(String s);
 
 public:
   bool debugEnabled();
@@ -258,6 +258,7 @@ protected:
     String m_sPayload;
     String m_sTopic;
     String m_sDecoder;
+    String m_sModel;
     uint16_t m_nPort;
     Protocol m_Protocol;
     Security m_Security;

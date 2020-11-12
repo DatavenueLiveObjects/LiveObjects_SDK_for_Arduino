@@ -13,6 +13,7 @@ setSecurity	KEYWORD2
 enableDebug	KEYWORD2
 setClientID	KEYWORD2
 setDecoder	KEYWORD2
+setModel	KEYWORD2
 debugEnabled KEYWORD2
 addTimestamp	KEYWORD2
 addLocation	KEYWORD2
