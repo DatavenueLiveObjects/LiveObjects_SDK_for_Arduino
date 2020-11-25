@@ -1,0 +1,13 @@
+COMPONENT                               | VERSION          | LICENCE                    | URL
+-------------------------------------------------------------------------------------------------------------------------------------------------
+MKRNB                                   | Latest           | GNU LGPL 2.1               | https://github.com/arduino-libraries/MKRNB
+MKRGSM                                  | Latest           | GNU LGPL 2.1               | https://github.com/arduino-libraries/MKRGSM
+WiFiNINA                                | Latest           | GNU LGPL 2.1               | https://github.com/arduino-libraries/WiFiNINA
+WiFi101                                 | Latest           | GNU LGPL 2.1               | https://github.com/arduino-libraries/WiFi101
+ArduinoMQTTClient                       | 0.1.5 moddified  | GNU LGPL 2.1               | https://github.com/arduino-libraries/ArduinoMqttClient
+PubSubClient                            | Latest           | MIT License                | https://github.com/knolleary/pubsubclient/blob/master/LICENSE.txt
+ArduinoJSON                             | Latest           | MIT License                | https://github.com/bblanchon/ArduinoJson/blob/6.x/LICENSE.md
+Adafruit FONA                           | Latest           | BSD License                | https://github.com/adafruit/Adafruit_FONA
+Adafruit MQTT                           | 2.0.0 modiffied  | MIT License                | https://github.com/adafruit/Adafruit_MQTT_Library/blob/master/LICENSE
+ESP8266 boards components               | Latest           | GNU LGPL 2.1               | https://github.com/esp8266/Arduino/blob/master/LICENSE
+ESP32 boards components                 | Latest           | GNU LGPL 2.1               | https://github.com/espressif/arduino-esp32/blob/master/LICENSE.md

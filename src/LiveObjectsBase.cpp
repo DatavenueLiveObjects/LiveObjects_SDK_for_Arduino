@@ -1,4 +1,10 @@
 
+/*
+ * Copyright (C) Orange
+ *
+ * This software is distributed under the terms and conditions of the 'MIT'
+ * license which can be found in the file 'LICENSE.md' in this package distribution
+ */
 #include "LiveObjectsBase.h"
 LiveObjectsBase::LiveObjectsBase()
     :
@@ -341,6 +347,11 @@ void LiveObjectsBase::publishMessage(const String& topic, String& payload) {
  ******************************************************************************/
 void LiveObjectsBase::begin(Protocol p, Encoding e, bool d)
 {
+  if(e != TEXT && e != BINARY)
+  {
+    outputDebug(ERR,"Wrong encoding type! Check your code. begin(MQTT/SMS , TEXT/BINARY, false/true)");
+    while(true);
+  }
   m_Protocol = p;
   m_Encoding = e;
   m_bDebug = d;

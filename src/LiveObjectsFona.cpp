@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) Orange
+ *
+ * This software is distributed under the terms and conditions of the 'MIT'
+ * license which can be found in the file 'LICENSE.md' in this package distribution
+ */
 #include "LiveObjectsFona.h"
 #ifdef FONAD
 LiveObjectsFona::LiveObjectsFona() 
@@ -6,6 +12,7 @@ LiveObjectsFona::LiveObjectsFona()
    ,m_FonaSerial(FONA_TX,FONA_RX)
    ,m_FonaMQTT(&m_Fona,MQTT_BROKER, 1883,"Fona", MQTT_USER, SECRET_LIVEOBJECTS_API_KEY)
    ,m_sClientID()
+   ,m_sModel("Orange")
    ,m_nPort(1883)
    ,m_Security(NONE)
 {
@@ -14,9 +21,10 @@ LiveObjectsFona::LiveObjectsFona()
 
 void LiveObjectsFona::begin(Protocol p, Encoding e, bool d) 
 {
-  if(m_Encoding == BINARY)
+  if(m_Encoding != TEXT)
   {
-    //Serial.println("[ERROR] This board support only Text mode");
+    Serial.println("[ERROR] This board support only Text mode");
+    while(true);
   }
   m_Protocol=p;
   m_Encoding=e;

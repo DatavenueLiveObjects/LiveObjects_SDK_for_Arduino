@@ -15,13 +15,13 @@ jobs:
          "arduino:samd:mkrwifi1010",
          "arduino:samd:nano_33_iot",
          "arduino:samd:mkrvidor4000",
-         '"esp8266:esp8266:huzzah" "http://arduino.esp8266.com/stable/package_esp8266com_index.json"'
+         '"esp8266:esp8266:huzzah" "http://arduino.esp8266.com/stable/package_esp8266com_index.json"',
+         '"adafruit:samd:adafruit_feather_m0:usbstack=arduino,debug=off" "https://adafruit.github.io/arduino-board-index/package_adafruit_index.json"'
+         #'"adafruit:avr:feather32u4" "https://adafruit.github.io/arduino-board-index/package_adafruit_index.json" ',
          #'"esp32:esp32:esp32doit-devkit-v1:FlashFreq=80,UploadSpeed=921600,DebugLevel=none" "https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json"'
        ]
 
    steps:
-     #- run: pip install pyserial
-     #- run: pip3 install pyserial
      - uses: actions/checkout@v1
        with:
          fetch-depth: 1
