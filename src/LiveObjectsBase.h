@@ -12,13 +12,18 @@
  ******************************************************************************/
 #define PAYLOAD_DATA_SIZE 1024
 #define KEEP_ALIVE_NETWORK 1000
-#define SW_REVISION "1.8.0"
+#define SW_REVISION "2.0.1"
 
 
 /******************************************************************************
    LiveObjects MQTT constants
  ******************************************************************************/
+#if defined ARDUINO_SAMD_MKRWIFI1010 || defined ESP8266 || defined ESP32\
+ || defined ARDUINO_SAMD_MKRVIDOR4000|| defined ARDUINO_SAMD_NANO_33_IOT
+#define MQTT_BROKER "mqtt.liveobjects.orange-business.com"
+#else
 #define MQTT_BROKER "liveobjects.orange-business.com"
+#endif
 #define MQTT_USER "json+device"
 #define MQTT_PUBDATA "dev/data"
 #define MQTT_PUBDATA_BINARY "dev/v1/data/binary"

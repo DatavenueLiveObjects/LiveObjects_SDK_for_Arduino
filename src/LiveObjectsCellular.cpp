@@ -148,22 +148,36 @@ void LiveObjectsCellular::connectNetwork()
   }
   if(m_nPort==8883){
     if (!m_bCertLoaded) {
-      outputDebug(INFO,"Loading DigiCert Root CA certificate");
-      MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT.name, LO_ROOT_CERT.size);
-      if (MODEM.waitForPrompt() != 1) {
-        outputDebug(ERR,"Problem loading certificate!\nStopping here.");
-        while (1) ;
-      }
-      else {
-        MODEM.write(LO_ROOT_CERT.data, LO_ROOT_CERT.size);
-        int ready;
-        while (!MODEM.ready());
-        m_bCertLoaded = true;
-        outputDebug(INFO,"Certificate loaded");
+      int i;
+      String response;
+      for (i=0; i<(sizeof LO_ROOT_CERT / sizeof *LO_ROOT_CERT); ++i) {
+        // get MD5 of LO_ROOT_CERT[i].name certificate
+        MODEM.sendf("AT+USECMNG=4,0,\"%s\"", LO_ROOT_CERT[i].name);
+        MODEM.waitForResponse(2000, &response);
+        int rl = response.length();
+        String md5=response.substring(rl-1-32, rl-1); // MD5 has 32-hex digits
+        // uploading certificate if necessary
+        if (md5!=LO_ROOT_CERT[i].md5) {
+          outputDebug(INFO, "Loading Root CA certificate: ", LO_ROOT_CERT[i].name, ", size: " ,LO_ROOT_CERT[i].size, ", md5: " ,LO_ROOT_CERT[i].md5);
+          MODEM.sendf("AT+USECMNG=0,0,\"%s\",%d", LO_ROOT_CERT[i].name, LO_ROOT_CERT[i].size);
+          if (MODEM.waitForPrompt() != 1) {
+            outputDebug(ERR,"Problem loading certificate!\nStopping here.");
+            while (1) ;
+          }
+          else {
+            MODEM.write(LO_ROOT_CERT[i].data, LO_ROOT_CERT[i].size);
+            int ready;
+            while (!MODEM.ready());
+            m_bCertLoaded = true;
+            outputDebug(INFO,"Certificate loaded");
+          }
+        }
+        else {
+          outputDebug(INFO,"Certificate ", LO_ROOT_CERT[i].name, " has been already uploaded");
+        }
       }
     }
   }
-
   m_sModel = m_sMqttid;
 }
 
