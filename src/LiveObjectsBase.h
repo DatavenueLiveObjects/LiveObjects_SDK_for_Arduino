@@ -12,7 +12,7 @@
  ******************************************************************************/
 #define PAYLOAD_DATA_SIZE 1024
 #define KEEP_ALIVE_NETWORK 1000
-#define SW_REVISION "1.8.0"
+#define SW_REVISION "2.0.0"
 
 
 /******************************************************************************
@@ -36,6 +36,7 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
+#define JSONTAGS "tags"
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
@@ -170,6 +171,7 @@ public:
 public:
   void addTimestamp(time_t timestamp);
   void addLocation(double lat, double lon, double alt);
+  void addTag(char* tag);
   virtual void addPowerStatus()=0;
   virtual void addNetworkInfo()=0;
   void clearPayload();
@@ -254,6 +256,7 @@ protected:
     LinkedList<LiveObjects_parameter> parameters;
     LiveObjects_networkStatus networkStatus = DISCONNECTED;
     StaticJsonDocument<PAYLOAD_DATA_SIZE> easyDataPayload;
+    JsonArray payloadTags;
 /******************************************************************************
    VARIABLES
 ******************************************************************************/

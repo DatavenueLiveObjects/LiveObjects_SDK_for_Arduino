@@ -424,6 +424,13 @@ void LiveObjectsBase::addLocation(double lat, double lon, double alt)
   else addToStringPayload(lat,lon,alt);
 }
 
+void LiveObjectsBase::addTag(char* tag)
+{
+  if (!(easyDataPayload.containsKey(JSONTAGS)))
+    payloadTags = easyDataPayload.createNestedArray(JSONTAGS);
+  payloadTags.add(tag);
+}
+
 void LiveObjectsBase::clearPayload()
 {
   easyDataPayload.clear();
