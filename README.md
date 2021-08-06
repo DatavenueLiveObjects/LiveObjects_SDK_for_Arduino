@@ -4,8 +4,9 @@
 
 This code wraps all the functions necessary to make your object work with Live Objects.
 
- You can declare parameters, which you can later update OTA from Live objects. You can also create commands to trigger actions remotely.
-The code will manage the LTE-M, GSM and WiFi connection(depending on currently used board), as well MQTT and SMS exchanges with Live objects under the hood to keep your parameters up to date or execute the commands received without you having to take care of them (apart from writing the code of these commands, of course).
+You can declare parameters, which you can later update OTA from Live objects. You can also create commands to trigger actions remotely.
+
+The code will manage the LTE-M, GSM and WiFi connection (depending on currently used board), as well MQTT(S) and SMS exchanges with Live objects under the hood to keep your parameters up to date or execute the commands received without you having to take care of them (apart from writing the code of these commands, of course).
 
 ## Compatibility ##
 | Board | MQTT | MQTTS | SMS |
@@ -16,7 +17,7 @@ The code will manage the LTE-M, GSM and WiFi connection(depending on currently u
 | Arduino MKR 1500 NB | OK | OK | OK |
 | Arduino MKR VIDOR 4000 | OK | OK* | - |
 | Arduino Nano 33 IoT | OK | OK | - |
-| ESP8266 Boards | OK | - | - |
+| ESP8266 Boards | OK | OK** | - |
 | ESP32 Boards | OK | OK | - |
 | Adafruit Feather M0 WiFi| OK | OK | - |
 | Adafruit Feather 32u4 | OK | - | OK |
@@ -60,6 +61,26 @@ This code needs 2 ~~3~~ external libraries to run, that you can install using th
    Line ~165 - m_Fona.setGPRSNetworkSettings(F("APN"), F(""), F(""));
 5. Import library into the Arduino IDE, to do this select: *Sketch-> Include Library-> Add .ZIP Library* and select folder which you cloned in the previous step(actually it doesn't need to be .ZIP-ed to be imported). After successful import you should see example sketches in *File->Examples->LiveObjectsSDK*
 
+6. Modules MKR 1010 WiFi, MKR VIDOR 4000, Nano 33 IoT should work "out of the box" using MQTTS. If not, you need to upgrade theirs firmwares and certificates using embedded updater in Arduino IDE:
+*Tools -> WiFi101/WiFiNINA Firmware Updater*.
+
+**Optionally for ESP8266 for getting MQTTS:
+
+ESP8266 can use MQTT as default. If you want to use MQTTS, you need to do below steps.
+
+Install [**ESP8266 updater**](https://github.com/esp8266/arduino-esp8266fs-plugin) plugin for Arduino IDE.
+
+File `certs.ar` containing necessary certificates is included in this repository. 
+
+Below procedure run once, puts file containing certificates in ESP8266 filesystem:
+- run Arduino IDE,
+- create a new (empty) sketch (eg. ***ESP8266fs.ino***),
+- save it in some folder (eg. ***certificates***),
+- create subfolder ***data*** in prepared folder ***certificates***,
+- put file `certs.ar` (please do not change name because it is called by SDK) into ***data*** subfolder,
+- open sketch ***ESP8266fs.ino*** (if necessary),
+- close Serial Monitor (if opened),
+- use tool to upload : *Tools -> ESP8266 Sketch Data Upload*.
 
 ## Developer guide ##
 

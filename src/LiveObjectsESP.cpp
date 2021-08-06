@@ -30,22 +30,17 @@ void LiveObjectsESP::begin(Protocol p, Encoding s, bool bDebug)
   switch(m_Security)
   {
     case TLS:
-    m_pClient = new WiFiClientSecure();
-    m_pMqttclient = new PubSubClient(*m_pClient);
-    m_nPort = 8883;
-    #ifdef ESP32D
-    ((WiFiClientSecure*)m_pClient)->setCACert(SERVER_CERT);
-    #else
-    ((WiFiClientSecure*)m_pClient)->setCACert(LO_ROOT_CERT.data, LO_ROOT_CERT.size);
-    #endif
-    break;
+      m_pClient = new WiFiClientSecure();
+      m_pMqttclient = new PubSubClient(*m_pClient);
+      m_nPort = 8883;
+      break;
     case NONE:
-    m_pClient = new WiFiClient();
-    m_pMqttclient = new PubSubClient(*m_pClient);
-    m_nPort = 1883;
-    break;
+      m_pClient = new WiFiClient();
+      m_pMqttclient = new PubSubClient(*m_pClient);
+      m_nPort = 1883;
+      break;
     default:
-    outputDebug(ERR,"Wrong mode! Stopping...");
+      outputDebug(ERR,"Wrong mode! Stopping...");
     while(true);
   }
   m_bInitialized = true;
@@ -54,7 +49,7 @@ void LiveObjectsESP::begin(Protocol p, Encoding s, bool bDebug)
 
 void LiveObjectsESP::connectNetwork() 
 {
-  outputDebug(INFO, "Connectong to ", SECRET_SSID);
+  outputDebug(INFO, "Connecting to ", SECRET_SSID);
   #ifdef ESP8266D
     WiFi.begin(SECRET_SSID, SECRET_WIFI_PASS);
   #else
@@ -73,7 +68,7 @@ void LiveObjectsESP::connectNetwork()
   }
 
   outputDebug(INFO,"Connected, IP addres: ", m_sIP);
-   uint8_t mac[6];
+  uint8_t mac[6];
   char buff[10];
   WiFi.macAddress(mac);
 
@@ -133,8 +128,62 @@ void LiveObjectsESP::connectMQTT()
   }
 
   outputDebug(INFO,"Connecting to MQTT broker ",MQTT_BROKER,":",m_nPort);
+
+  if (m_Security==TLS)
+  {
+    bool conn_ok = false;
+    int i = 0;
+
+    #ifdef ESP32D
+    // loading root certificate before connection to MQTT broker
+    while ((!conn_ok) and (i<(sizeof LO_ROOT_CERT_PEM / sizeof *LO_ROOT_CERT_PEM)))
+    {
+      outputDebug(INFO,"Root certificate loading: ", LO_ROOT_CERT_PEM[i].name);
+      ((WiFiClientSecure*)m_pClient)->setCACert(LO_ROOT_CERT_PEM[i].data);
+      conn_ok = m_pMqttclient->connect(m_sMqttid.c_str(),MQTT_USER, SECRET_LIVEOBJECTS_API_KEY.c_str());
+      ++i;
+    }
+    #else
+    BearSSL::CertStore certStore;
+    SPIFFS.begin();               // Initializing SPI flash filesystem
+
+    // Get time from NTP server, as required for certificate validation
+    configTime(3 * 3600, 0, "pool.ntp.org", "time.nist.gov");
+    outputDebug(INFO, "Waiting for NTP sync");
+    time_t now = time(nullptr);
+    while (now < 8 * 3600 * 2) {
+      delay(500);
+      outputDebug(TXT, ".");
+      now = time(nullptr);
+    }
+    struct tm timeinfo;
+    gmtime_r(&now, &timeinfo);
+    String atime = asctime(&timeinfo);
+    outputDebug(INFO, "Current UTC: ", atime);
+
+    int numCerts = certStore.initCertStore(SPIFFS, PSTR("/certs.idx"), PSTR("/certs.ar"));
+    outputDebug(INFO, "Number of CA certs read: ", numCerts);
+    if (numCerts == 0)
+    {
+      outputDebug(ERR, "No certs found. Stopping here.\nDid you upload certificates to the SPIFFS directory before running?");
+      while(1);
+    }
+    ((WiFiClientSecure*)m_pClient)->setCertStore(&certStore);
+
+    conn_ok = m_pMqttclient->connect(m_sMqttid.c_str(),MQTT_USER, SECRET_LIVEOBJECTS_API_KEY.c_str());
+    #endif
+
+    if (!conn_ok)
+    {
+      outputDebug(ERR,"No proper root certificate.\nStopping here.");
+      while(1); 
+    }
+  }
+  else 
+  {
+    m_pMqttclient->connect(m_sMqttid.c_str(),MQTT_USER, SECRET_LIVEOBJECTS_API_KEY.c_str());
+  }
   
-  while (!m_pMqttclient->connect(m_sMqttid.c_str(),MQTT_USER, SECRET_LIVEOBJECTS_API_KEY.c_str())) outputDebug(TXT,".");
   outputDebug(INFO,"You're connected to the MQTT broker");
 
   #ifdef ESP8266D
