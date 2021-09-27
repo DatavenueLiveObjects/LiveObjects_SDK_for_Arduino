@@ -16,6 +16,9 @@ LiveObjectsCellular::LiveObjectsCellular()
   #ifdef GSMD
   ,m_GPRSAcces()
   #endif
+  #ifdef LIVE_OBJECTS_IOT_SAFE
+  ,m_IoTSafe(IOT_SAFE_CUSTOM_AID, IOT_SAFE_CUSTOM_AID_LEN)
+  #endif
 {
   String num = SECRET_SERVER_MSISDN;
   for (int i = 0; i < num.length(); i+=2)
@@ -47,6 +50,18 @@ void LiveObjectsCellular::begin(Protocol p, Encoding s, bool bDebug)
   {
     switch(m_Security)
     {
+      #ifdef LIVE_OBJECTS_IOT_SAFE
+      case MUTUAL_TLS_WITH_IOT_SAFE:
+      #ifdef NBD
+      m_pClient = new NBClient();
+      #elif defined GSMD
+      m_pClient = new GSMClient();
+      #endif
+      m_pBearSSLClient = new BearSSLClient(*m_pClient, TAs, 1);
+      m_pMqttclient = new MqttClient(m_pBearSSLClient);
+      m_nPort = 8883;
+      break;
+      #endif
       case TLS:
       #ifdef NBD
       m_pClient = new NBSSLClient();
@@ -81,6 +96,19 @@ void LiveObjectsCellular::begin(Protocol p, Encoding s, bool bDebug)
   }
   m_bInitialized = true;
 }
+
+#ifdef LIVE_OBJECTS_IOT_SAFE
+unsigned long LiveObjectsCellular::getTime() {
+  outputDebug(INFO,"Getting time from the cellular module...");
+  // get the current time from the cellular module
+  return m_Acces.getTime();
+}
+
+unsigned long LiveObjectsCellular::trampolineGetTime() {
+  return LiveObjects::get().getTime();
+}
+#endif
+
 void LiveObjectsCellular::connectNetwork()
 {
   //Set client id as IMEI
@@ -102,6 +130,23 @@ void LiveObjectsCellular::connectNetwork()
     #endif
     if(modem.begin())
     {
+      #ifdef LIVE_OBJECTS_IOT_SAFE
+      if (m_Security == MUTUAL_TLS_WITH_IOT_SAFE)
+      {
+        // Set a callback to get the current time used to validate the servers certificate
+        ArduinoBearSSL.onGetTime(trampolineGetTime);
+
+        // Wait a little before sending command to applet as we're getting strange
+        // behavior otherwise (i.e. an empty file is returned)
+        delay(2000);
+
+        br_x509_certificate client_certificate = m_IoTSafe.readClientCertificate();
+        m_pBearSSLClient->setEccCert(client_certificate);
+        m_sMqttid = m_IoTSafe.getClientCertificateCommonName();
+        outputDebug(INFO,"m_sMqttid retrieved from client certificate: ", m_sMqttid);
+        m_pBearSSLClient->setEccSign(m_IoTSafe.trampolineSign);
+      }
+      #endif
       if(m_sMqttid.length()==0)
       {
         String imei="";

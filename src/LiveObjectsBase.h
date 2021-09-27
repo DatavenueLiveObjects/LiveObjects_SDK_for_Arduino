@@ -6,6 +6,11 @@
  */
 #pragma once
 
+#if defined __has_include
+  #if __has_include (<LiveObjectsConfig.h>)
+    #include <LiveObjectsConfig.h>
+  #endif
+#endif
 
 /******************************************************************************
    DEFAULT VALUES FOR LIVEOBJECTS
@@ -101,6 +106,9 @@ enum Security
   NONE
   ,TLS
   //,DTLS
+  #ifdef LIVE_OBJECTS_IOT_SAFE
+  ,MUTUAL_TLS_WITH_IOT_SAFE
+  #endif
 };
 
 enum Encoding

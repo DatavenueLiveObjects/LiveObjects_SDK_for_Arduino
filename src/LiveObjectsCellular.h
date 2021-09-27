@@ -5,6 +5,9 @@
  * license which can be found in the file 'LICENSE.md' in this package distribution
  */
 #include "LiveObjectsMKR.h"
+#ifdef LIVE_OBJECTS_IOT_SAFE
+#include "IoTSAFE.h"
+#endif
 #if defined ARDUINO_SAMD_MKRNB1500
 #define NBD
 #include <MKRNB.h>
@@ -37,6 +40,10 @@ class LiveObjectsCellular : public LiveObjectsMKR
     void checkNetwork() override;
     void disconnectNetwork() override;
     static void messageCallback(int msg);
+    #ifdef LIVE_OBJECTS_IOT_SAFE
+    unsigned long getTime();
+    static unsigned long trampolineGetTime();
+    #endif
   private:
   #ifdef NBD
   NB m_Acces;
@@ -50,6 +57,9 @@ class LiveObjectsCellular : public LiveObjectsMKR
   GSM_SMS m_Sms;
   #endif
   String m_sNumber;
+  #ifdef LIVE_OBJECTS_IOT_SAFE
+  IoTSAFE m_IoTSafe;
+  #endif
 };
 
 typedef LiveObjectsCellular LiveObjects;
