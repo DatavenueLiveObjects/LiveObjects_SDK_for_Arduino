@@ -127,7 +127,6 @@ Adafruit_MQTT::Adafruit_MQTT(const char *server, uint16_t port,
                              const char *user, const char *pass) {
   servername = server;
   portnum = port;
-  clientid = "";
   username = user;
   password = pass;
 

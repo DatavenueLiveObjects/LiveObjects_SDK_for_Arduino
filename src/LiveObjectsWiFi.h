@@ -5,10 +5,6 @@
  * license which can be found in the file 'LICENSE.md' in this package distribution
  */
 #if defined ARDUINO_SAMD_MKRWIFI1010 || defined ARDUINO_SAMD_NANO_33_IOT || defined ARDUINO_SAMD_MKRVIDOR4000
-  #ifdef ARDUINO_SAMD_MKRVIDOR4000
-    #include <api/RingBuffer.h>
-    #include <VidorPeripherals.h>
-  #endif
   #include "LiveObjectsMKR.h"
   #define WIFID
   #include <WiFiNINA.h>
