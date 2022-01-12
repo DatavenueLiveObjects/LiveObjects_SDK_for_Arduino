@@ -31,9 +31,9 @@ This code needs external libraries to run, that you can install using the built-
 - [WiFiNINA](https://www.arduino.cc/en/Reference/WiFiNINA) in order to handle WiFi module on **Arduino MKRWIFI 1010** and **Arduino Nano 33 IoT**
 - [WiFi101](https://www.arduino.cc/en/Reference/WiFi101) in order to handle WiFi module on **Arduino MKR 1000**
 
-- ~~[ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino~~ <sup>2)</sup>
+- ~~[ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino~~ <sup>*</sup>
 
- <sup>2)</sup> currently integrated into this SDK, until https://github.com/arduino-libraries/ArduinoMqttClient/pull/44 fix will be merged
+ <sup>*</sup> currently integrated into this SDK, until https://github.com/arduino-libraries/ArduinoMqttClient/pull/44 fix will be merged
 
 #### Library for ESP8266 and ESP32 boards
 - [PubSubClient](https://pubsubclient.knolleary.net/) library provides a client for doing simple publish/subscribe messaging with a server that supports MQTT
