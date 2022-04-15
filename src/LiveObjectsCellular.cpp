@@ -102,17 +102,14 @@ void LiveObjectsCellular::connectNetwork()
     #endif
     if(modem.begin())
     {
-      if(m_sMqttid.length()==0)
+      String imei="";
+      for(int i=1;i<=3;i++)
       {
-        String imei="";
-        for(int i=1;i<=3;i++)
-        {
-          imei=modem.getIMEI();
-          if(imei.length()!=0) break;
-          delay(100*i);
-        }
-        m_sMqttid = imei;
+        imei=modem.getIMEI();
+        if(imei.length()!=0) break;
+        delay(100*i);
       }
+      m_sMqttid += imei;
     }
     else
     {
