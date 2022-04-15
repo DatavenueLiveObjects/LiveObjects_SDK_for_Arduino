@@ -94,7 +94,7 @@ void LiveObjectsESP::connectNetwork()
   //   outputDebug(INFO, m_sIP," ",  m_sMqttid, " ",  m_sMac);
   //   delay(500);
   // }
-  m_sModel = m_sMac;
+  m_sModel = m_sMqttid;
 }
 
 void LiveObjectsESP::checkNetwork() 
