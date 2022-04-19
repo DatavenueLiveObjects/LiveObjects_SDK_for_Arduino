@@ -7,7 +7,8 @@ This example shows how to send some sample data (device uptime) to Live Objects 
 First of all, be sure that you installed the required libraries and generated an API key mentioned in the main README file, then:
 1. Open "1_send_data.ino" sketch using Arduino IDE
 2. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in arduino_secrets.h with API key you generated
-3. Upload *1_send_data.ino* sketch to your Arduino MKR NB 1500 board
+3. In ```lo.setSecurity()``` select security mode using ```TLS``` or ```NONE``` according to board abilities shown in **Compatibility** point in main **README.md**
+4. Upload *1_send_data.ino* sketch to your Arduino MKR NB 1500 board
 
 
 ## Verify
