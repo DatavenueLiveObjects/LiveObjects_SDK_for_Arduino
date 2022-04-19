@@ -8,6 +8,9 @@
 /******************************************************************************
    MKR BOARDS BASE CLASS
  ******************************************************************************/
+#ifdef LIVE_OBJECTS_IOT_SAFE
+#include <ArduinoBearSSL.h>
+#endif
 #include "LiveObjectsBase.h"
 #include "MqttClient.h"
 class LiveObjectsMKR : public LiveObjectsBase
@@ -33,4 +36,7 @@ public:
 protected:
   Client* m_pClient;
   MqttClient *m_pMqttclient;
+  #ifdef LIVE_OBJECTS_IOT_SAFE
+  BearSSLClient *m_pBearSSLClient;
+  #endif
 };

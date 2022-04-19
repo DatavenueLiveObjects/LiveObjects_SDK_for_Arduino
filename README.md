@@ -30,6 +30,7 @@ This code needs external libraries to run, that you can install using the built-
 - [MKRGSM](https://www.arduino.cc/en/Reference/MKRGSM) in order to handle the GSM module on **Arduino MKR GSM 1400**
 - [WiFiNINA](https://www.arduino.cc/en/Reference/WiFiNINA) in order to handle WiFi module on **Arduino MKRWIFI 1010** and **Arduino Nano 33 IoT**
 - [WiFi101](https://www.arduino.cc/en/Reference/WiFi101) in order to handle WiFi module on **Arduino MKR 1000**
+- [ArduinoBearSSL](https://www.arduino.cc/reference/en/libraries/arduinobearssl) in order to handle 2-way MQTTS connection through **IoT SAFE** (disabled by default, must be enabled by defining LIVE_OBJECTS_IOT_SAFE in LiveObjectsConfig.h)
 
 - ~~[ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that implements a MQTT client for Arduino~~ <sup>*</sup>
 
@@ -40,6 +41,10 @@ This code needs external libraries to run, that you can install using the built-
 
 #### Library developed by Benoît Blanchon (mandatory for both Arduino, ESP and Adafruit boards)
 - [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily
+
+#### Library developed by Orange
+*mandatory to handle 2-way MQTTS connection through **IoT SAFE** (disabled by default, must be enabled by defining LIVE_OBJECTS_IOT_SAFE)
+- [IoT-SAFE-APDU-library](https://github.com/Orange-OpenSource/IoT-SAFE-APDU-library)
 
 #### SAMD21 Arduino core
 - You also need to install the Arduino core for Atmel SAMD21 processor, used on the boards of the MKR family. Open the [Boards Manager](https://www.arduino.cc/en/guide/cores) and install the package called "Arduino SAMD Boards (32-bit ARM Cortex-M0+)".
