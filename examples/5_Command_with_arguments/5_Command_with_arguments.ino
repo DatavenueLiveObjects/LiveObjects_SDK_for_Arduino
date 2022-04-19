@@ -31,7 +31,7 @@ void blinkLED(const String arguments, String &response) {
   int timeOn = incomingArguments["time ON"];  // arguments are now accessible using their name
   int timeOff = incomingArguments["time OFF"];
   int reps = incomingArguments["repetitions"];
-  unsigned long elaspedTime = millis();   // will keep track of time in order to compute the animation duration
+  unsigned long elapsedTime = millis();   // will keep track of time in order to compute the animation duration
 
   pinMode(LED_BUILTIN, OUTPUT);
   for (byte i = 0; i < reps; i++) {
@@ -41,10 +41,10 @@ void blinkLED(const String arguments, String &response) {
     delay(timeOff);
   }
 
-  elaspedTime = millis() - elaspedTime;
+  elapsedTime = millis() - elapsedTime;
 
   StaticJsonDocument<128> outgoingResponse;  // creation of a JSON document that will hold the response
-  outgoingResponse["animation duration (milliseconds)"] = elaspedTime;  // adding reponse item (you can add several by repeating the line):
+  outgoingResponse["animation duration (milliseconds)"] = elapsedTime;  // adding reponse item (you can add several by repeating the line):
   serializeJson(outgoingResponse, response);  // exporting JSON in 'reponse' String
   // example of 'response' content: "{\"animation duration (milliseconds)\":5000}"
 }
