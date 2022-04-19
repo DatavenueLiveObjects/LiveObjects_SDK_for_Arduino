@@ -17,7 +17,7 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n*** Live Objects for Arduino MKR boards, revision ");
   Serial.print(SW_REVISION);
-  Serial.println("***");
+  Serial.println(" ***");
   lo.begin(SMS, TEXT, true);
   lo.connect(); // connects to the network + Live Objects
 }
