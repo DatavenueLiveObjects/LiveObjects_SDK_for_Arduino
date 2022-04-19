@@ -21,9 +21,9 @@ unsigned long lastMessageTime = 0;   // stores the time when last data message w
 void blinkLED5times(const String arguments, String &response) {
   pinMode(LED_BUILTIN, OUTPUT);
   for (byte i = 0; i < 5; i++) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(250);
     digitalWrite(LED_BUILTIN, LOW);
+    delay(250);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(250);
   }
   response = "{\"blinked\":\"5 times\"}";

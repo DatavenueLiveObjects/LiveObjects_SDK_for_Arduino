@@ -35,9 +35,9 @@ void blinkLED(const String arguments, String &response) {
 
   pinMode(LED_BUILTIN, OUTPUT);
   for (byte i = 0; i < reps; i++) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(timeOn);
     digitalWrite(LED_BUILTIN, LOW);
+    delay(timeOn);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(timeOff);
   }
 
