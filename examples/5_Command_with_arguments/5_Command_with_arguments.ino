@@ -31,20 +31,20 @@ void blinkLED(const String arguments, String &response) {
   int timeOn = incomingArguments["time ON"];  // arguments are now accessible using their name
   int timeOff = incomingArguments["time OFF"];
   int reps = incomingArguments["repetitions"];
-  unsigned long elaspedTime = millis();   // will keep track of time in order to compute the animation duration
+  unsigned long elapsedTime = millis();   // will keep track of time in order to compute the animation duration
 
   pinMode(LED_BUILTIN, OUTPUT);
   for (byte i = 0; i < reps; i++) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(timeOn);
     digitalWrite(LED_BUILTIN, LOW);
+    delay(timeOn);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(timeOff);
   }
 
-  elaspedTime = millis() - elaspedTime;
+  elapsedTime = millis() - elapsedTime;
 
   StaticJsonDocument<128> outgoingResponse;  // creation of a JSON document that will hold the response
-  outgoingResponse["animation duration (milliseconds)"] = elaspedTime;  // adding reponse item (you can add several by repeating the line):
+  outgoingResponse["animation duration (milliseconds)"] = elapsedTime;  // adding reponse item (you can add several by repeating the line):
   serializeJson(outgoingResponse, response);  // exporting JSON in 'reponse' String
   // example of 'response' content: "{\"animation duration (milliseconds)\":5000}"
 }
@@ -54,7 +54,7 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n*** Live Objects on Arduino MKR boards, revision ");
   Serial.print(SW_REVISION);
-  Serial.println("***");
+  Serial.println(" ***");
 
   // Declaring a simple commands hadled by the function 'blinkLED'.
   lo.addCommand("blink", blinkLED);

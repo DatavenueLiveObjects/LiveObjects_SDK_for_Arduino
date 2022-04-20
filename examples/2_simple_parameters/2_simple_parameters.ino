@@ -22,7 +22,7 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n*** Live Objects on Arduino MKR NB boards, revision ");
   Serial.print(SW_REVISION);
-  Serial.println("***");
+  Serial.println(" ***");
 
   // Declaring a simple parameter stored in the variable 'messageRate'.
   // This parameter will become available for modification over the air from Live Objects

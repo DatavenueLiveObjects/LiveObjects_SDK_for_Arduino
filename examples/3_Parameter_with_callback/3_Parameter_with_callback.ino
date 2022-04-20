@@ -30,7 +30,7 @@ void setup() {
   Serial.begin(115200);
   Serial.print("\n*** Live Objects on Arduino MKR boards, revision ");
   Serial.print(SW_REVISION);
-  Serial.println("***");
+  Serial.println(" ***");
 
   // Declaring a parameter with a callback function 'processMsgRate'.
   // This function will be called after the update of the variable 'messageRate'.
