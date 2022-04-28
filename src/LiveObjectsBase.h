@@ -12,7 +12,7 @@
  ******************************************************************************/
 #define PAYLOAD_DATA_SIZE 1024
 #define KEEP_ALIVE_NETWORK 1000
-#define SW_REVISION "2.0.3"
+#define SW_REVISION "2.0.4"
 
 
 /******************************************************************************
@@ -24,7 +24,7 @@
 #else
 #define MQTT_BROKER "liveobjects.orange-business.com"
 #endif
-#define SDK_PREFIX "Arduino:"
+#define SDK_PREFIX "urn:lo:nsid:Arduino:"
 #define MQTT_USER "json+device"
 #define MQTT_PUBDATA "dev/data"
 #define MQTT_PUBDATA_BINARY "dev/v1/data/binary"
