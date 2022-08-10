@@ -11,4 +11,4 @@
 #define VL6180X_ADDRESS 0x29
 
 void VL6180XInit();
-void printVL6180xIdentification(struct VL6180xIdentification *temp);
+void printVL6180xIdentification(struct VL6180xIdentification *dev);

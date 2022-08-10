@@ -418,6 +418,7 @@ void LiveObjectsBase::addTimestamp(time_t timestamp)
   }
   #endif
 }
+
 void LiveObjectsBase::addLocation(double lat, double lon, double alt)
 {
   if(m_Protocol == MQTT && m_Encoding==TEXT) addToPayload(easyDataPayload.createNestedObject("location"),"lat",lat,"lon",lon,"alt",alt);

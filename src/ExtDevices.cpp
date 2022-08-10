@@ -14,7 +14,7 @@ void VL6180XInit()
 {
   VL6180x sensor(VL6180X_ADDRESS);
   Wire.begin();         // Start I2C library
-  delay(1500);           // delay 1.5s
+  delay(1500);          // delay 1.5s
 
   sensor.getIdentification(&identification); // Retrieve manufacture info from device memory
   printVL6180xIdentification(&identification);      // Helper function to print all the Module information
@@ -29,34 +29,31 @@ void VL6180XInit()
   delay(1000); // delay 1s
 }
 
-void printVL6180xIdentification(struct VL6180xIdentification *temp)
+void printVL6180xIdentification(struct VL6180xIdentification *dev)
 {
+  Serial.println();
   Serial.println("VL6180X  sensor");
 
   Serial.print("Model ID = ");
-  Serial.println(temp->idModel);
+  Serial.println(dev->idModel);
 
   Serial.print("Model Rev = ");
-  Serial.print(temp->idModelRevMajor);
+  Serial.print(dev->idModelRevMajor);
   
-  Serial.println(temp->idModelRevMinor);
+  Serial.println(dev->idModelRevMinor);
 
   Serial.print("Module Rev = ");
-  Serial.print(temp->idModuleRevMajor);
+  Serial.print(dev->idModuleRevMajor);
   
-  Serial.println(temp->idModuleRevMinor);
+  Serial.println(dev->idModuleRevMinor);
 
   Serial.print("Manufacture Date = ");
-  Serial.print((temp->idDate >> 3) & 0x001F);
+  Serial.print((dev->idDate >> 3) & 0x001F);
   Serial.print("/");
-  Serial.print((temp->idDate >> 8) & 0x000F);
+  Serial.print((dev->idDate >> 8) & 0x000F);
   Serial.print("/1");
-  Serial.print((temp->idDate >> 12) & 0x000F);
+  Serial.print((dev->idDate >> 12) & 0x000F);
   Serial.print(" Phase: ");
-  Serial.println(temp->idDate & 0x0007);
-
-  Serial.print("Manufacture Time (s)= ");
-  Serial.println(temp->idTime * 2);
+  Serial.println(dev->idDate & 0x0007);
   Serial.println();
-  // Serial.println();
 }
