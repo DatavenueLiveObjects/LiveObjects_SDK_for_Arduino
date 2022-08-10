@@ -46,13 +46,18 @@ String ToHex(String x)
 
 uint8_t hexBinary(char msb, char lsb)
 {
+  auto capitalizeChar = [](char x)
+  {
+    if((x >= 'a') && (x <= 'f')) return (x - ' ');  // eg. 'a'(0x61) - ' ' (0x20) -> 'A'(0x41)
+    else return x - static_cast<char>(0);
+  };
   auto hexToDec = [](char x)
   {
-    if(x>='a' && x<='f') return 10 + (x-'a');
-    else return x-'0';
+    if((x >= 'A') && (x <= 'F')) return 10 + (x - 'A'); // only capital hex digits
+    else return x - '0';
   };
 
-  return (hexToDec(msb)<<4)|hexToDec(lsb); 
+  return (hexToDec(capitalizeChar(msb)) << 4) | hexToDec(capitalizeChar(lsb)); 
 }
 
 String to7bit(String inputString)
