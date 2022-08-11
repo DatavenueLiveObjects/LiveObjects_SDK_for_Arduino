@@ -38,6 +38,7 @@ void loop() {
 
     distance = sensor.getDistance();
     lo.addToPayload(distance);               // adding 'distance' value to the current payload
+    // limiting value to 2 decimal places
     ambient_light = (static_cast<int>(sensor.getAmbientLight(GAIN_1) * 100.0)) / 100.0;
     lo.addToPayload(ambient_light);
 
