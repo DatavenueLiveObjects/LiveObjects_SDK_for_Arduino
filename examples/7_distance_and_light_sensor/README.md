@@ -1,4 +1,4 @@
-# Send data from VL6180 sensor to Live Objects
+# Sending data from VL6180 sensor to Live Objects
 
 This example shows how to send real data from sensor [VL6180X](https://www.st.com/resource/en/datasheet/vl6180x.pdf). Sensor delivers two useful values:
 - ambient light [[lx](https://en.wikipedia.org/wiki/Lux)],
