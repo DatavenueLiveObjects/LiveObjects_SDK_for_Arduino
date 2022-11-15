@@ -4,7 +4,7 @@ jobs:
  build:
    runs-on: ubuntu-latest
    env:
-     LIBRARIES: WiFi101 WiFiNINA MKRNB MKRGSM ArduinoJson VidorPeripherals PubSubClient "SparkFun VL6180 Sensor"
+     LIBRARIES: WiFi101 WiFiNINA MKRNB MKRGSM ArduinoJson VidorPeripherals PubSubClient "SparkFun VL6180 Sensor" ArduinoMqttClient
 
    strategy:
      matrix:
