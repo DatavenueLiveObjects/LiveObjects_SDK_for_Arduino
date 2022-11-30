@@ -32,7 +32,13 @@ If you want to limit amount of data which are being sent from board to Live Obje
 To achieve this goal, you need to create **private binary decoder** in Live Objects portal. Use: *Data -> Decoders -> +Add*. You an enter data as below and click **Save**.
 
 ![binary_decoder](img/binary_decoder.png)
-
+|Field                     |Value                                                      |
+|--------------------------|-----------------------------------------------------------|
+|Name                      |VL6180Xbin                                                 |
+|Model                     |VL6180Xbin100                                              |
+|Type                      |Parameterized (Binary)                                     |
+|Binary payload description|ubyte distance; float amblight;                            |
+|Template                  |{\\"distance\\":{{distance}}, "amblight\\":{{amblight}}\\"}|
 <br>
 
 ### MQTT interface modification
@@ -48,10 +54,13 @@ Then click **Identity** and next click icon in red circle. After that in field *
 ![mod_interface](img/mod_interface_1.png)
 
 ## Running
-First of all, be sure that you installed the required libraries and generated an API key mentioned in the main **README.md** file, then:
-1. Open *7_distance_and_light_sensor.ino* sketch using Arduino IDE,
-2. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in *arduino_secrets.h* with API key you generated,
-3. Define necessary credentials for your board in *arduino_secrets.h*:
+To use a software you need to:
+1. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one,
+2. Create an [API key](https://liveobjects.orange-business.com/#/administration/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key,
+3. Clone or download the directory from Github,
+4. Open *7_distance_and_light_sensor.ino* sketch using Arduino IDE,
+5. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in *[arduino_secrets.h](arduino_secrets.h)* with API key you generated,
+6. Define necessary credentials for your board in *arduino_secrets.h*:
 - for WiFi boards: 
     - ```extern const String SECRET_SSID = "...;```
     - ```extern const String SECRET_WIFI_PASS = "...";```
@@ -60,9 +69,9 @@ First of all, be sure that you installed the required libraries and generated an
     - ```extern const String SECRET_APN = "";``` (if needed),
     - ```extern const String SECRET_APN_USER = "...";``` (if needed),
     - ```extern const String SECRET_APN_PASS = "...";```   (if needed),
-4. In ```lo.setSecurity()``` select security mode using ```TLS``` or ```NONE``` according to board abilities shown in **Compatibility** point in main **README.md**,
-5. Upload *7_distance_and_light_sensor.ino* sketch to your board.
-6. In your terminal window you should see similiar output:
+7. In ```lo.setSecurity()``` select security mode using ```TLS``` or ```NONE``` according to board abilities shown in **Compatibility** point in main **README.md**,
+8. Upload *7_distance_and_light_sensor.ino* sketch to your board.
+9. In your terminal window you should see similiar output:
 
 ```
 15:31:22.732 -> 
@@ -117,23 +126,35 @@ If you want to limit amount of data which are being sent from board to Live Obje
 To achieve this goal, you need to create **private sms decoder** in Live Objects portal. Use: *Data -> Decoders -> +Add*. You an enter data as below and click **Save**.
 
 ![sms_decoder](img/sms_decoder.png)
-
+|Field              |Value                                                      |
+|-------------------|-----------------------------------------------------------|
+|Name               |VL6180Xsms                                                |
+|Model              |VL6180Xs                                              |
+|Type               |Parameterized (CSV)                                     |
+|Columns description|[{"name": "distance","jsonType": "NUMERIC"},{"name": "amblight","jsonType": "NUMERIC"}]|
+|Parser options     |{"columnSeparator": ";","quoteChar": "\"","useEscapeChar": false,"escapeChar": "\\","skipWhiteSpace": false,"lineFeedSeparator": "\n"}|
+|Template           |{distance:{{distance}}, amblight:{{amblight}}}|
+<br>
 ### SMS interface modification
 
 You need to modify SMS interface for you device in similar way as for MQTT device selecting **VL6180Xsms** decoder.
 
 ## Running
-First of all, be sure that you installed the required libraries and generated an API key mentioned in the main **README.md** file, then:
-1. Open *7_distance_and_light_sensor.ino* sketch using Arduino IDE,
-2. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in *arduino_secrets.h* with API key you generated,
-3. Specify the number of sever (gate) in *arduino_secrets.h*:
-    - ```extern const String SECRET_SERVER_MSISDN = "...";```,
-4. In ```lo.setSecurity()``` select security mode ```NONE```
-5. Upload *7_distance_and_light_sensor.ino* sketch to your board.
-6. In your terminal window you should see similiar output:
+To use a software you need to:
+1. Log in to [Live Objects](https://liveobjects.orange-business.com) or request a [trial account](https://liveobjects.orange-business.com/#/request_account) (up to 10 devices for 1 year) if you don't have one,
+2. Create an [API key](https://liveobjects.orange-business.com/#/administration/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key,
+3. Clone or download the directory from Github,
+4. Open *7_distance_and_light_sensor.ino* sketch using Arduino IDE,
+5. Replace ```const char SECRET_LIVEOBJECTS_API_KEY[]="...";``` in *[arduino_secrets.h](arduino_secrets.h)* with API key you generated,
+6. Specify the number of sever (gate):
+    - ```extern const String SECRET_SERVER_MSISDN = "...";``` - the same number needs to be used in interface of sms device. **Every Orange operator has its individual number.**
+    ![sms_int](img/sms_int2.png)
+7. In ```lo.setSecurity()``` select security mode ```NONE```
+8. Upload *7_distance_and_light_sensor.ino* sketch to your board.
+9. In your terminal window you should see similiar output:
 
 ```
-3:00:46.470 -> VL6180X  sensor
+13:00:46.470 -> VL6180X  sensor
 13:00:46.470 -> Model ID = 180
 13:00:46.470 -> Model Rev = 13
 13:00:46.470 -> Module Rev = 12
@@ -155,4 +176,6 @@ First of all, be sure that you installed the required libraries and generated an
 
 ## Verify
 
-You can verify if device is online and data are delivered in the same way as it is described for MQTT device.
+You can verify if device is online and data are delivered in the same way as it is described for MQTT device. You need to take into account that SMS devices are always **Online**.
+
+![sms_dev](img/sms_dev.png)

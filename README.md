@@ -201,15 +201,15 @@ void loop()
 
 ## Toubleshooting ##
 ### My payload is truncated on Live Objects ###
-This can happen with large payload, because of the fixed-size JSON storage allocated for processing your payload (512 bytes by default). You can allocate more room by modifying the value in the **'LiveObjects.h'** file at line 8:
+This can happen with large payload, because of the fixed-size JSON storage allocated for processing your payload (1024 bytes by default). You can allocate more room by modifying the value in the **'LiveObjectsBase.h'** file at line 13 e.g.:
 ```c++
-#define PAYLOAD_DATA_SIZE 1024
+#define PAYLOAD_DATA_SIZE 2048
 ```
 
 ### My parameters are not registered on Live Objects ###
-Same reason as above, it can happen if you have a large number of parameters. You need to allocate more room by modifying the value in the **'LiveObjects.h'** file at line 7:
+Same reason as above, it can happen if you have a large number of parameters. You need to allocate more room by modifying the value in the **'LiveObjectsBase.h'** file at line 13 e.g.:
 ```c++
-#define PAYLOAD_DATA_SIZE 1024
+#define PAYLOAD_DATA_SIZE 2048
 ```
 ### One of my command is not working ###
 If you have many arguments in your command, first check that you get all the arguments when entering the function:
@@ -222,7 +222,8 @@ void blinkLED(const String arguments, String &response) {
   ...
 }
 ```
-If your arguments are incomplete, try allocating more room for JSON storage by modifying the value in the **'LiveObjects.h'** file at line 7:
+If your arguments are incomplete, try allocating more room for JSON storage by modifying the value in the **'LiveObjectsBase.h'** file at line 13 e.g.:
 ```c++
-#define PAYLOAD_DATA_SIZE 1024
+#define PAYLOAD_DATA_SIZE 2048
 ```
+
