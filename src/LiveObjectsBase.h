@@ -12,7 +12,8 @@
  ******************************************************************************/
 #define PAYLOAD_DATA_SIZE 1024
 #define KEEP_ALIVE_NETWORK 1000
-#define SW_REVISION "2.1.1"
+#define SW_MODEL "LO_SDK_Arduino"
+#define SW_REVISION "2.1.2"
 
 /******************************************************************************
    LiveObjects MQTT constants
