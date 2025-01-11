@@ -41,6 +41,7 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
+#define JSONTAGS "tags"
 
 /******************************************************************************
    INCLUDES
@@ -176,6 +177,7 @@ public:
 public:
   void addTimestamp(time_t timestamp);
   void addLocation(double lat, double lon, double alt);
+  void addTag(const char* tag);
   virtual void addPowerStatus()=0;
   virtual void addNetworkInfo()=0;
   void clearPayload();
@@ -259,6 +261,8 @@ protected:
     LinkedList<LiveObjects_parameter> parameters;
     LiveObjects_networkStatus networkStatus = DISCONNECTED;
     StaticJsonDocument<PAYLOAD_DATA_SIZE> easyDataPayload;
+    JsonArray tags;
+    
 /******************************************************************************
    VARIABLES
 ******************************************************************************/
