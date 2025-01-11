@@ -135,7 +135,7 @@ void LiveObjectsWiFi::messageCallback(int msg)
 void LiveObjectsWiFi::addNetworkInfo()
 {
   String tmp;
-  tmp = WiFi.RSSI();
+  tmp = String(WiFi.RSSI());
   tmp += " dbm";
   if(m_Protocol == MQTT && m_Encoding==TEXT)  addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"mac",m_sMac,"ssid",SECRET_SSID,"ip",m_sIP,"strength",tmp);
   else addToPayload(m_sMac,SECRET_SSID,m_sIP,tmp);
