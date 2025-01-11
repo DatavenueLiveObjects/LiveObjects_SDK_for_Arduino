@@ -14,7 +14,6 @@
 #define KEEP_ALIVE_NETWORK 1000
 #define SW_REVISION "2.1.1"
 
-
 /******************************************************************************
    LiveObjects MQTT constants
  ******************************************************************************/
@@ -42,6 +41,7 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
+
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
@@ -215,7 +215,6 @@ protected:
   virtual void sendMQTT(String& topic, String& doc)=0;
   virtual void deserializeMessage(JsonDocument& doc)=0;
 
-
 protected:
  /******************************************************************************
    CONFIGURATION MANAGER
@@ -285,12 +284,12 @@ protected:
    PARAM TYPERS
  ******************************************************************************/
     void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    // void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     #if not defined ESP8266 && not defined ESP32 && not defined ARDUINO_AVR_FEATHER32U4
     void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     #endif
-    void paramTyper(const String& name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);

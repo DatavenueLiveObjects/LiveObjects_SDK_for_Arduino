@@ -31,12 +31,12 @@ void LiveObjectsBase::paramTyper(const String& name, bool* variable, LiveObjects
   else
     addTypedParam(name, variable, type, T_BOOL, callback);
 }
-void LiveObjectsBase::paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
+/*void LiveObjectsBase::paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
     addTypedParam(name, variable, INTEGER, T_CHAR, callback);
   else
     addTypedParam(name, variable, type, T_CHAR, callback);
-}
+}*/
 #if not defined ESP8266 && not defined ESP32 && not defined ARDUINO_AVR_FEATHER32U4
 void LiveObjectsBase::paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback) {
   if (type == IMPLICIT)
@@ -111,9 +111,9 @@ void LiveObjectsBase::ptrTyper(const LiveObjects_parameter param, const JsonDocu
     case T_BOOL:
       updateParameter(param, (bool*)param.value, configIn, configOut);
       break;
-    case T_CHAR:
+/*    case T_CHAR:
       updateParameter(param, (char*)param.value, configIn, configOut);
-      break;
+      break;*/
     #ifndef ESP8266
     case T_INT:
       updateParameter(param, (int*)param.value, configIn, configOut);
@@ -301,7 +301,7 @@ void LiveObjectsBase::sendData(const String customPayload) {
   {
     StaticJsonDocument<PAYLOAD_DATA_SIZE> payload;
     deserializeJson(payload, customPayload);
-    if (!payload.containsKey(JSONMODEL)) payload[JSONMODEL] = m_sModel;
+    if (!payload[JSONMODEL].is<const char*>()) payload[JSONMODEL] = m_sModel;
     publishMessage(m_sTopic, payload);
   }
   else publishMessage(m_sTopic, const_cast<String&>(customPayload));
