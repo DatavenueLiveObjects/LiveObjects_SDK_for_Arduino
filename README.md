@@ -34,7 +34,7 @@ This code needs external libraries to run, that you can install using the built-
 - [PubSubClient](https://pubsubclient.knolleary.net/) library provides a client for doing simple publish/subscribe messaging with a server that supports MQTT
 
 #### Library developed by Benoît Blanchon (mandatory for both Arduino, ESP and Adafruit boards)
-- [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily
+- [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily.
 The default installation includes ArduinoJSON v6.21.5, optimized for the architectures supported by this SDK. While later versions of ArduinoJSON are compatible, they will consume more flash memory (see [here](https://arduinojson.org/news/2024/01/03/arduinojson-7/)).
 
 #### SAMD21 Arduino core
