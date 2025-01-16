@@ -53,7 +53,7 @@ void LiveObjectsWiFi::begin(Protocol p, Encoding s, bool bDebug)
 void LiveObjectsWiFi::connectNetwork()
 {
   #ifdef ADAFRUIT_FEATHER_M0
-    WiFi.setPins(8,7,4,2);
+  WiFi.setPins(8,7,4,2);
   #endif
   if(!m_bInitialized)
   {
@@ -81,7 +81,7 @@ void LiveObjectsWiFi::connectNetwork()
     outputDebug(TXT,".");
     delay(1000);
   }
-   outputDebug();
+  outputDebug();
   IPAddress ip = WiFi.localIP();
   for(int i=0;i<4;++i)
   {
@@ -89,7 +89,9 @@ void LiveObjectsWiFi::connectNetwork()
     if(i!=3) m_sIP+='.';
   }
 
-   uint8_t mac[6];
+  m_sMqttid+= "mac:";
+
+  uint8_t mac[6];
   char buff[10];
   WiFi.macAddress(mac);
 
@@ -107,37 +109,35 @@ void LiveObjectsWiFi::connectNetwork()
       m_sMac += (char)toupper(buff[j]);
       m_sMqttid += (char)toupper(buff[j]);
     }
-  if(i!=0) m_sMac += ':';
+    if(i!=0) m_sMac += ':';
   }
-  m_sModel = m_sMqttid;
 }
+
 void LiveObjectsWiFi::checkNetwork()
 {
   if(WiFi.status()== WL_DISCONNECTED)
     connectNetwork();
 }
+
 void LiveObjectsWiFi::disconnectNetwork()
 {
   outputDebug(INFO,"Disconnecting WiFi");
   WiFi.disconnect();
 }
+
 void LiveObjectsWiFi::messageCallback(int msg)
 {
   LiveObjects::get().onMQTTmessage(msg);
 }
-
-
-
-
-
-
 
 void LiveObjectsWiFi::addNetworkInfo()
 {
   String tmp;
   tmp = String(WiFi.RSSI());
   tmp += " dbm";
-  if(m_Protocol == MQTT && m_Encoding==TEXT)  addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"mac",m_sMac,"ssid",SECRET_SSID,"ip",m_sIP,"strength",tmp);
-  else addToPayload(m_sMac,SECRET_SSID,m_sIP,tmp);
+  if(m_Protocol == MQTT && m_Encoding==TEXT)
+    addToPayload(easyDataPayload[JSONVALUE].createNestedObject("networkInfo"),"mac",m_sMac,"ssid",SECRET_SSID,"ip",m_sIP,"rssi",tmp);
+  else
+    addToPayload(m_sMac,SECRET_SSID,m_sIP,tmp);
 }
 #endif
