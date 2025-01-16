@@ -12,8 +12,8 @@
  ******************************************************************************/
 #define PAYLOAD_DATA_SIZE 1024
 #define KEEP_ALIVE_NETWORK 1000
-#define SW_REVISION "2.1.1"
-
+#define SW_MODEL "LO_SDK_Arduino"
+#define SW_REVISION "2.1.2"
 
 /******************************************************************************
    LiveObjects MQTT constants
@@ -24,7 +24,7 @@
 #else
 #define MQTT_BROKER "liveobjects.orange-business.com"
 #endif
-#define SDK_PREFIX "urn:lo:nsid:Arduino:"
+#define SDK_PREFIX SW_MODEL ":"
 #define MQTT_USER "json+device"
 #define MQTT_PUBDATA "dev/data"
 #define MQTT_PUBDATA_BINARY "dev/v1/data/binary"
@@ -42,6 +42,8 @@
 #define JSONCFGTYPE "t"
 #define JSONMODEL "model"
 #define JSONVALUE "value"
+#define JSONTAGS "tags"
+
 /******************************************************************************
    INCLUDES
  ******************************************************************************/
@@ -176,6 +178,7 @@ public:
 public:
   void addTimestamp(time_t timestamp);
   void addLocation(double lat, double lon, double alt);
+  void addTag(const char* tag);
   virtual void addPowerStatus()=0;
   virtual void addNetworkInfo()=0;
   void clearPayload();
@@ -214,7 +217,6 @@ protected:
   virtual void sendMQTT(String& topic, JsonDocument& doc)=0;
   virtual void sendMQTT(String& topic, String& doc)=0;
   virtual void deserializeMessage(JsonDocument& doc)=0;
-
 
 protected:
  /******************************************************************************
@@ -260,6 +262,8 @@ protected:
     LinkedList<LiveObjects_parameter> parameters;
     LiveObjects_networkStatus networkStatus = DISCONNECTED;
     StaticJsonDocument<PAYLOAD_DATA_SIZE> easyDataPayload;
+    JsonArray tags;
+    
 /******************************************************************************
    VARIABLES
 ******************************************************************************/
@@ -285,12 +289,12 @@ protected:
    PARAM TYPERS
  ******************************************************************************/
     void paramTyper(const String& name, bool* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
-    void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    // void paramTyper(const String& name, char* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     #if not defined ESP8266 && not defined ESP32 && not defined ARDUINO_AVR_FEATHER32U4
     void paramTyper(const String& name, int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, unsigned int* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     #endif
-    void paramTyper(const String& name, int8_t*variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
+    void paramTyper(const String& name, int8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, int32_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, int16_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);
     void paramTyper(const String& name, uint8_t* variable, LiveObjects_parameterType type, onParameterUpdateCallback callback);

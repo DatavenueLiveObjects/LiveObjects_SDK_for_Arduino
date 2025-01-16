@@ -1,12 +1,10 @@
-# Prototype with Orange using Live Objects and Arduino MKR Boards
+# Quickly prototype IoT solutions with Orange using Live Objects and Arduino compatible boards
 
-### Discover Orange  [**Live Objects**](https://liveobjects.orange-business.com) using dedicated SDK for [**Arduino MKR family boards**](https://store.arduino.cc/arduino-genuino/arduino-genuino-mkr-family).
+### Discover [**Live Objects**](https://liveobjects.orange-business.com), the IoT platform from Orange using this dedicated SDK for [**Arduino**](https://store.arduino.cc/arduino-genuino/arduino-genuino-mkr-family) and compatible boards.
 
-This code wraps all the functions necessary to make your object work with Live Objects.
+This dedicated SDK simplifies connecting your MKR board to the Live Objects platform. It manages LTE-M, GSM, and WiFi connections (depending on your board) and handle MQTT(S) and SMS communication behind the scenes. Easily define parameters you can update remotely and create commands to trigger actions on your device.
 
-You can declare parameters, which you can later update OTA from Live objects. You can also create commands to trigger actions remotely.
-
-The code will manage the LTE-M, GSM and WiFi connection (depending on currently used board), as well MQTT(S) and SMS exchanges with Live objects under the hood to keep your parameters up to date or execute the commands received without you having to take care of them (apart from writing the code of these commands, of course).
+Focus on your application logic – this library handles the communication with the Live Objects platform, keeping your parameters synchronized and executing received commands.
 
 ## Compatibility ##
 | Board | MQTT | MQTTS | SMS |
@@ -36,7 +34,8 @@ This code needs external libraries to run, that you can install using the built-
 - [PubSubClient](https://pubsubclient.knolleary.net/) library provides a client for doing simple publish/subscribe messaging with a server that supports MQTT
 
 #### Library developed by Benoît Blanchon (mandatory for both Arduino, ESP and Adafruit boards)
-- [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily
+- [ArduinoJson](https://arduinojson.org/), a powerful library used to parse, store and handle JSON easily.
+The default installation includes ArduinoJSON v6.21.5, optimized for the architectures supported by this SDK. While later versions of ArduinoJSON are compatible, they will consume more flash memory (see [here](https://arduinojson.org/news/2024/01/03/arduinojson-7/)).
 
 #### SAMD21 Arduino core
 - You also need to install the Arduino core for Atmel SAMD21 processor, used on the boards of the MKR family. Open the [Boards Manager](https://www.arduino.cc/en/guide/cores) and install the package called "Arduino SAMD Boards (32-bit ARM Cortex-M0+)".
@@ -47,7 +46,7 @@ This code needs external libraries to run, that you can install using the built-
 2. Create an [API key](https://liveobjects.orange-business.com/#/administration/apikeys) for your device. Give it a name, select the *Device access* role and validate. Copy the key.
 3. Clone or download the directory from Github.
 4. In the **'src/arduino_secrets.h'** file :
-   - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file -keep the double quotes!
+   - Paste it as initialization value for the `SECRET_LIVEOBJECTS_API_KEY` variable in the 'arduino_secrets.h' file — keep the double quotes!
    
    - In case of feather 32u4 you have to change type of this variable to *char** from *String*. 
    - Fill in the connection(WIFI or GSM) credentials if needed (pin code, APN information, etc). In case of GSM connection, most of the time, APN will set up automatically. Your SIM card may have a default pin code (like "0000"), unless you deactivated it using the [Pin management](https://github.com/arduino-libraries/MKRNB/blob/master/examples/Tools/PinManagement/PinManagement.ino) sketch, provided with the MKRNB library.

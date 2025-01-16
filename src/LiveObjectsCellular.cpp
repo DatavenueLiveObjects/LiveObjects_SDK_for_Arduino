@@ -102,7 +102,7 @@ void LiveObjectsCellular::connectNetwork()
     #endif
     if(modem.begin())
     {
-      String imei="";
+      String imei="imei:";
       for(int i=1;i<=3;i++)
       {
         imei=modem.getIMEI();
