@@ -15,8 +15,7 @@ Focus on your application logic – this library handles the communication with 
 | Arduino Nano 33 IoT | OK | OK | - |
 | ESP8266 Boards | OK | OPT<sup>1)</sup> | - |
 | ESP32 Boards | OK | OK | - |
-| Adafruit Feather M0 WiFi| OK | - | - |
-| Adafruit Feather 32u4 | OK | - | OK |
+| Adafruit Feather 32u4 | - | - | OK |
 
 ## Prerequisites/dependecies ##
 This code needs external libraries to run, that you can install using the built-in [Library Manager](https://www.arduino.cc/en/guide/libraries) of the Arduino IDE.
