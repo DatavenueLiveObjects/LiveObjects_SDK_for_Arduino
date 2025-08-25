@@ -9,11 +9,9 @@ Focus on your application logic – this library handles the communication with 
 ## Compatibility ##
 | Board | MQTT | MQTTS | SMS |
 | :--- | :---: | :---: | :---: |
-| Arduino MKR1000 WIFI | OK | - | - |
 | Arduino MKR 1010 WiFi | OK | OK | - |
-| Arduino MKR 1400 GSM | OK | OK | OK |
-| Arduino MKR 1500 NB | OK | OK | OK |
-| Arduino MKR VIDOR 4000 | OK | OK | - |
+| Arduino MKR 1400 GSM | - | - | OK |
+| Arduino MKR 1500 NB | - | - | OK |
 | Arduino Nano 33 IoT | OK | OK | - |
 | ESP8266 Boards | OK | OPT<sup>1)</sup> | - |
 | ESP32 Boards | OK | OK | - |
